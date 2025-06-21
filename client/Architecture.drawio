@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2025-06-21T00:00:00.000Z" agent="5.0" etag="drawio-architecture" version="21.6.5" type="device">
+  <diagram name="高性能文件上传架构" id="architecture-diagram">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- 标题 -->
+        <mxCell id="title" value="高性能文件上传客户端架构图" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="30" width="300" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- 调用者层 -->
+        <mxCell id="caller-layer" value="调用者层 (任何方式)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontStyle=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="80" y="100" width="960" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Qt UI -->
+        <mxCell id="qt-ui" value="Qt UI&#xa;MainWindow&#xa;ProgressWidget" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="120" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 控制台 -->
+        <mxCell id="console" value="控制台应用&#xa;命令行工具" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="280" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Web服务 -->
+        <mxCell id="web-service" value="Web服务&#xa;HTTP API" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="440" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 其他应用 -->
+        <mxCell id="other-app" value="其他C++程序&#xa;第三方应用" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="600" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- SDK接口说明 -->
+        <mxCell id="sdk-interface" value="统一SDK接口&#xa;initialize()&#xa;registerCallback()&#xa;sendFileNotification()" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="760" y="120" width="160" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- SDK层 -->
+        <mxCell id="sdk-layer" value="SDK Layer (SDK层)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontStyle=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="80" y="220" width="960" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- FileUploadSDK -->
+        <mxCell id="file-upload-sdk" value="FileUploadSDK&#xa;(单例模式)&#xa;线程安全接口" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="120" y="240" width="150" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 回调管理 -->
+        <mxCell id="callback-manager" value="回调管理器&#xa;IUploadCallback&#xa;进度和结果反馈" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="320" y="240" width="150" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 线程安全队列 -->
+        <mxCell id="thread-safe-queue" value="线程安全队列&#xa;行级锁设计&#xa;入队/出队分离" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="520" y="240" width="150" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 配置管理 -->
+        <mxCell id="config-manager" value="配置管理&#xa;网络检测&#xa;协议选择" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="720" y="240" width="150" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- SDK内部线程层 -->
+        <mxCell id="internal-thread-layer" value="SDK Internal Thread Layer (SDK内部线程层)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontStyle=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="80" y="340" width="960" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- 通知线程 -->
+        <mxCell id="notification-thread" value="NotificationThread&#xa;处理上传通知队列&#xa;条件变量唤醒机制" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="120" y="360" width="200" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 本地服务客户端 -->
+        <mxCell id="local-service-client" value="LocalServiceClient&#xa;Named Pipe通信&#xa;进程间通信" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="360" y="360" width="200" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 回调处理 -->
+        <mxCell id="callback-handler" value="CallbackHandler&#xa;进度反馈处理&#xa;异步回调机制" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="600" y="360" width="200" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 本地文件上传服务 -->
+        <mxCell id="local-service-layer" value="Local Upload Service (本地文件上传服务 - 独立进程)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontStyle=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="80" y="460" width="960" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Named Pipe服务器 -->
+        <mxCell id="named-pipe-server" value="NamedPipeServer&#xa;接收SDK通知&#xa;服务器线程" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="120" y="480" width="150" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 上传队列管理 -->
+        <mxCell id="upload-queue-manager" value="上传队列管理&#xa;UploadTask队列&#xa;任务调度" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="320" y="480" width="150" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 进度报告器 -->
+        <mxCell id="progress-reporter" value="ProgressReporter&#xa;每秒定时器&#xa;进度反馈" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="520" y="480" width="150" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 线程池管理 -->
+        <mxCell id="thread-pool-manager" value="线程池管理&#xa;上传线程调度&#xa;资源管理" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="720" y="480" width="150" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 后台上传线程池 -->
+        <mxCell id="background-threads-layer" value="Background Upload Threads (后台上传线程池)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontStyle=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="80" y="580" width="960" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- 上传线程1 -->
+        <mxCell id="upload-thread-1" value="UploadThread 1&#xa;文件A上传&#xa;阻塞等待完成" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="120" y="600" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 上传线程2 -->
+        <mxCell id="upload-thread-2" value="UploadThread 2&#xa;文件B上传&#xa;阻塞等待完成" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="280" y="600" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 上传线程N -->
+        <mxCell id="upload-thread-n" value="UploadThread N&#xa;文件N上传&#xa;阻塞等待完成" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="440" y="600" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- ZeroMQ适配器 -->
+        <mxCell id="zeromq-adapter" value="ZeroMQ Adapter&#xa;局域网协议&#xa;高性能通信" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="600" y="600" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- ASIO适配器 -->
+        <mxCell id="asio-adapter" value="ASIO Adapter&#xa;广域网协议&#xa;跨网络通信" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="760" y="600" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 网络服务器 -->
+        <mxCell id="network-server" value="上传服务器&#xa;文件接收处理" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontStyle=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="400" y="720" width="200" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 箭头连接 -->
+        <!-- 调用者到SDK -->
+        <mxCell id="arrow1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#d79b00;" edge="1" parent="1" source="qt-ui" target="file-upload-sdk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#d79b00;" edge="1" parent="1" source="console" target="file-upload-sdk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#d79b00;" edge="1" parent="1" source="web-service" target="callback-manager">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#d79b00;" edge="1" parent="1" source="other-app" target="thread-safe-queue">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- SDK到内部线程 -->
+        <mxCell id="arrow5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1" source="file-upload-sdk" target="notification-thread">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1" source="thread-safe-queue" target="local-service-client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 内部线程到本地服务 -->
+        <mxCell id="arrow7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=3;strokeColor=#b85450;" edge="1" parent="1" source="local-service-client" target="named-pipe-server">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 本地服务内部流程 -->
+        <mxCell id="arrow8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#9673a6;" edge="1" parent="1" source="named-pipe-server" target="upload-queue-manager">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#9673a6;" edge="1" parent="1" source="upload-queue-manager" target="thread-pool-manager">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 本地服务到后台线程 -->
+        <mxCell id="arrow10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1" source="thread-pool-manager" target="upload-thread-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1" source="thread-pool-manager" target="upload-thread-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1" source="thread-pool-manager" target="upload-thread-n">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 后台线程到网络 -->
+        <mxCell id="arrow13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#d6b656;" edge="1" parent="1" source="upload-thread-1" target="zeromq-adapter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#d6b656;" edge="1" parent="1" source="upload-thread-2" target="asio-adapter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 网络适配器到服务器 -->
+        <mxCell id="arrow15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=3;strokeColor=#b85450;" edge="1" parent="1" source="zeromq-adapter" target="network-server">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=3;strokeColor=#b85450;" edge="1" parent="1" source="asio-adapter" target="network-server">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 回调反馈箭头 -->
+        <mxCell id="callback-arrow1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#ff0000;dashed=1;" edge="1" parent="1" source="progress-reporter" target="callback-handler">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="callback-arrow2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#ff0000;dashed=1;" edge="1" parent="1" source="callback-handler" target="callback-manager">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="callback-arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#ff0000;dashed=1;" edge="1" parent="1" source="callback-manager" target="qt-ui">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 图例 -->
+        <mxCell id="legend-title" value="图例说明" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="920" y="30" width="80" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend-data-flow" value="数据流向" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="100" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-data-arrow" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1050" y="110" as="sourcePoint" />
+            <mxPoint x="1070" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="legend-callback-flow" value="回调反馈" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="130" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-callback-arrow" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=2;strokeColor=#ff0000;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1050" y="140" as="sourcePoint" />
+            <mxPoint x="1070" y="140" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="legend-ipc" value="进程间通信" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="160" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-ipc-arrow" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;strokeWidth=3;strokeColor=#b85450;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1050" y="170" as="sourcePoint" />
+            <mxPoint x="1070" y="170" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
