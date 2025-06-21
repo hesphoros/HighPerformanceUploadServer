@@ -1,0 +1,6 @@
+.vscode/
+client/build/
+client/out/
+client/CMakePresets.json
+client/CMakeCache.txt
+client/.vs/
