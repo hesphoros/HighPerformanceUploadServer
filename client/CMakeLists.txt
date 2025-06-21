@@ -6,8 +6,7 @@ project(UploadClient VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 设置Qt6路径
-set(CMAKE_PREFIX_PATH "D:\\Qt\\6.5.3\\msvc2019_64")
+#set(CMAKE_PREFIX_PATH "D:/Qt/6.5.3/msvc2019_64/lib/cmake")
 
 # 查找Qt6
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
@@ -31,10 +30,6 @@ set(UPLOAD_SOURCES
     src/SyncUploadQueue/Lusp_SyncUploadQueue.cpp
 )
 
-set(FILEINFO_SOURCES
-    src/FileInfoWrapper.cpp
-)
-
 # 头文件（按模块组织）
 set(UI_HEADERS
     include/MainWindow.h
@@ -46,13 +41,8 @@ set(UPLOAD_HEADERS
     include/ThreadSafeRowLockQueue/ThreadSafeRowLockQueue.hpp
 )
 
-set(FILEINFO_HEADERS
-    include/FileInfo/FileInfo.h
-    include/FileInfoWrapper.h
-)
-
 set(THIRDPARTY_HEADERS
-    3rdParty/include/md5.h
+    3rdParty/include/hash-library/md5.h
 )
 
 # 合并所有源文件和头文件
@@ -60,13 +50,20 @@ set(ALL_SOURCES
     ${MAIN_SOURCES}
     ${UI_SOURCES}
     ${UPLOAD_SOURCES}
-    ${FILEINFO_SOURCES}
+    src/FileInfo/FileInfo.cpp
+    src/log_headers.cpp
+    3rdParty/src/log/UniConv.cpp
+    3rdParty/src/log/LightLogWriteImpl.cpp
+    3rdParty/src/hash-library/md5.cpp
+    3rdParty/src/hash-library/sha1.cpp
+    3rdParty/src/hash-library/sha256.cpp
+    3rdParty/src/hash-library/sha3.cpp
+    3rdParty/src/hash-library/crc32.cpp
 )
 
 set(ALL_HEADERS
     ${UI_HEADERS}
     ${UPLOAD_HEADERS}
-    ${FILEINFO_HEADERS}
     ${THIRDPARTY_HEADERS}
 )
 
@@ -82,6 +79,8 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include/SyncUploadQueue
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ThreadSafeRowLockQueue
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/include/hash-library
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/include/log
 )
 
 # 创建可执行文件
@@ -97,15 +96,14 @@ target_include_directories(UploadClient PRIVATE
 )
 
 # 链接Qt6库
-target_link_libraries(UploadClient 
-    Qt6::Core 
+target_link_libraries(UploadClient
+    Qt6::Core
     Qt6::Widgets
+    rpcrt4 # Windows RPC 生成UUID支持
+    $<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/lib/iconv/libiconv_1_17d.lib>
+    $<$<CONFIG:Release>:${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/lib/iconv/libiconv_1_17.lib>
+    Kernel32
 )
-
-# 链接Windows系统库
-if(WIN32)
-    target_link_libraries(UploadClient Kernel32)
-endif()
 
 # 设置输出目录
 set_target_properties(UploadClient PROPERTIES

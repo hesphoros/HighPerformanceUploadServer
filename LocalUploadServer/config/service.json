@@ -1,0 +1,87 @@
+{
+    "service": {
+        "name": "HighPerformanceUploadService",
+        "display_name": "高性能文件上传服务",
+        "description": "提供高并发文件上传功能的后台服务，支持断点续传、进度回调、多线程并发等功能",
+        "start_type": "auto",
+        "service_mode": true,
+        "debug_mode": false,
+        "restart_on_failure": true,
+        "restart_delay_seconds": 60,
+        "failure_actions": {
+            "reset_period_days": 1,
+            "reboot_message": "高性能上传服务连续失败，系统将重启",
+            "actions": [
+                {"type": "restart", "delay_ms": 60000},
+                {"type": "restart", "delay_ms": 120000},
+                {"type": "reboot", "delay_ms": 300000}
+            ]
+        }
+    },
+    "logging": {
+        "enable_event_log": true,
+        "enable_file_log": true,
+        "log_level": "info",
+        "max_log_size_mb": 100,
+        "log_rotation_days": 30,
+        "log_directory": "C:\\ProgramData\\HighPerformanceUpload\\Logs",
+        "event_log_source": "HighPerformanceUploadService",
+        "log_categories": {
+            "service": true,
+            "network": true,
+            "upload": true,
+            "performance": false,
+            "debug": false
+        }
+    },
+    "monitoring": {
+        "enable_performance_counters": true,
+        "health_check_interval_seconds": 60,
+        "memory_threshold_mb": 500,
+        "cpu_threshold_percent": 80,
+        "disk_threshold_percent": 90,
+        "network_timeout_seconds": 30,
+        "auto_restart_on_failure": true,
+        "max_restart_attempts": 3,
+        "restart_cooldown_minutes": 5
+    },
+    "network": {
+        "client_listen_port": 8901,
+        "ui_callback_port": 8902,
+        "bind_to_localhost_only": true,
+        "max_client_connections": 100,
+        "connection_timeout_seconds": 300,
+        "keep_alive_interval_seconds": 30,
+        "remote_server_url": "https://upload.example.com/api/upload",
+        "remote_timeout_seconds": 60,
+        "remote_retry_count": 3
+    },
+    "upload": {
+        "max_concurrent_threads": 4,
+        "chunk_size_mb": 1,
+        "retry_count": 3,
+        "timeout_seconds": 30,
+        "enable_resume": true,
+        "resume_chunk_verification": true,
+        "max_upload_speed_mbps": 0,
+        "upload_queue_size": 1000,
+        "temp_directory": "C:\\ProgramData\\HighPerformanceUpload\\Temp",
+        "completed_retention_hours": 24
+    },
+    "security": {
+        "allow_local_connections_only": true,
+        "require_authentication": false,
+        "max_file_size_gb": 10,
+        "allowed_file_extensions": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".zip", ".rar"],
+        "blocked_file_extensions": [".exe", ".bat", ".cmd", ".scr", ".vbs", ".js"],
+        "scan_for_malware": false
+    },
+    "storage": {
+        "data_directory": "C:\\ProgramData\\HighPerformanceUpload\\Data",
+        "config_backup_enabled": true,
+        "config_backup_interval_hours": 24,
+        "auto_cleanup_enabled": true,
+        "cleanup_interval_hours": 6,
+        "max_disk_usage_percent": 85
+    }
+}

@@ -157,7 +157,7 @@ private:
         if (GetComputerNameA(buffer, &size)) {
             return std::string(buffer);
         }
-        return "Unknown";
+        return "Unknown-ComputerName"; // 获取计算机失败返回默认值
     }
     
     Lusp_UploadFileTyped detectFileType(const std::string& filePath) {

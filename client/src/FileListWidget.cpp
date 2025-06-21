@@ -1,5 +1,5 @@
 #include "FileListWidget.h"
-#include "FileInfoWrapper.h"
+#include "FileInfoQtAdapter.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -10,7 +10,7 @@
 #include <QFont>
 
 // FileItemWidget 实现
-FileItemWidget::FileItemWidget(const FileInfo& fileInfo, QWidget* parent)
+FileItemWidget::FileItemWidget(const FileInfoQtAdapter& fileInfo, QWidget* parent)
     : QWidget(parent)
     , m_fileInfo(fileInfo)
     , m_layout(nullptr)
@@ -116,12 +116,13 @@ void FileListWidget::addFiles(const QStringList& filePaths) {
             }
         }
         
-        if (!exists) {            // 创建FileInfo
-            FileInfo info(filePath);
+        if (!exists) {
+            Lusp_SyncUploadFileInfoHandler infoHandler(filePath.toStdString());
+            FileInfoQtAdapter infoAdapter(infoHandler);
             
             // 创建列表项
             QListWidgetItem* listItem = new QListWidgetItem(m_listWidget);
-            FileItemWidget* itemWidget = new FileItemWidget(info, this);
+            FileItemWidget* itemWidget = new FileItemWidget(infoAdapter, this);
             
             listItem->setSizeHint(itemWidget->sizeHint());
             m_listWidget->addItem(listItem);

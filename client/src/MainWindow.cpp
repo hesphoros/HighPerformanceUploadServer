@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "FileListWidget.h"
-#include "SyncUploadQueue/Lusp_SyncUploadQueue.h"  // 使用新的极简队列
+#include "SyncUploadQueue/Lusp_SyncUploadQueue.h"  
+#include "log_headers.h"
 
 #include <QApplication>
 #include <QVBoxLayout>
@@ -123,6 +124,7 @@ void MainWindow::connectSignals() {
     
     // 文件列表信号连接
     connect(m_fileListWidget, &FileListWidget::filesAdded, this, [this](const QStringList& files) {
+
         m_statusLabel->setText(QString("已添加 %1 个文件").arg(files.size()));
     });
 }
@@ -182,9 +184,11 @@ void MainWindow::dropEvent(QDropEvent *event) {
     }
     
     if (!filePaths.isEmpty()) {
-        // 🎯 极简调用：UI只需把文件丢进队列就完事！
+
+        
         addFilesToUploadQueue(filePaths);
         addFilesToList(filePaths);
+        
     }
     
     event->acceptProposedAction();
@@ -197,9 +201,11 @@ void MainWindow::onSelectFilesClicked() {
         "",
         "所有文件 (*)"
     );
-    
     if (!filePaths.isEmpty()) {
-        // 🎯 极简调用：UI只需把文件丢进队列就完事！
+        // 日志：打印所有用户选择的文件路径
+        for (const QString& filePath : filePaths) {
+            g_luspLogWriteImpl.WriteLogContent(LOG_INFO, "用户选择文件: " + filePath.toStdString());
+        }
         addFilesToUploadQueue(filePaths);
         addFilesToList(filePaths);
     }
@@ -227,14 +233,17 @@ void MainWindow::addFilesToUploadQueue(const QStringList& filePaths) {
         QFileInfo fileInfo(filePath);
         if (fileInfo.exists() && fileInfo.isFile()) {
             stdFilePaths.push_back(filePath.toStdString());
+            // 日志：每个即将入队的文件
+            g_luspLogWriteImpl.WriteLogContent(LOG_DEBUG, "准备入队文件: " + filePath.toStdString());
         }
     }
     
     if (!stdFilePaths.empty()) {
+        g_luspLogWriteImpl.WriteLogContent(LOG_INFO, "批量入队文件数: " + std::to_string(stdFilePaths.size()));
         // 🎯 这就是全部！UI线程只需要这一行代码！
         // 剩下的全部由通知线程和本地服务自动处理
         Lusp_SyncUploadQueue::instance().push(stdFilePaths);
-        
+        g_luspLogWriteImpl.WriteLogContent(LOG_INFO, "已提交到上传队列，总数: " + std::to_string(stdFilePaths.size()));
         m_statusLabel->setText(QString("已提交 %1 个文件到上传队列").arg(stdFilePaths.size()));
     }
 }

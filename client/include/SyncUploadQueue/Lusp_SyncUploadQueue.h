@@ -16,14 +16,13 @@
 #include <functional>
 #include <string>
 #include <list>
-#include "FileInfoWrapper.h"
+#include "FileInfo/FileInfo.h"
 #include <queue>
 #include <mutex>
 #include <condition_variable>
 #include <memory>
 #include <functional>
 #include <atomic>
-#include "FileInfo/FileInfo.h"
 #include "ThreadSafeRowLockQueue/ThreadSafeRowLockQueue.hpp"
 
 

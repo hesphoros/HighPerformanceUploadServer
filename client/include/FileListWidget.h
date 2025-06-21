@@ -8,15 +8,15 @@
 #include <QLabel>
 #include <QProgressBar>
 #include <QString>
-#include "FileInfoWrapper.h"
+#include "FileInfoQtAdapter.h"
 
 class FileItemWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit FileItemWidget(const FileInfo& fileInfo, QWidget* parent = nullptr);
+    explicit FileItemWidget(const FileInfoQtAdapter& fileInfo, QWidget* parent = nullptr);
     
-    const FileInfo& getFileInfo() const { return m_fileInfo; }
+    const FileInfoQtAdapter& getFileInfo() const { return m_fileInfo; }
     void updateProgress(int percentage);
     void setStatus(const QString& status);
 
@@ -24,7 +24,7 @@ private:
     void setupUI();
 
 private:
-    FileInfo m_fileInfo;
+    FileInfoQtAdapter m_fileInfo;
     QHBoxLayout* m_layout;
     QLabel* m_fileNameLabel;
     QLabel* m_fileSizeLabel;
