@@ -3,6 +3,8 @@
 #include "SyncUploadQueue/Lusp_SyncUploadQueue.h"  
 #include "log_headers.h"
 
+#include <chrono>
+#include <time.h>
 #include <QApplication>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -219,15 +221,16 @@ void MainWindow::onUploadClicked() {
         return;
     }
     
-    // 🎯 极简调用：UI只需把文件丢进队列就完事！
+    // UI只需把文件丢进队列就完事！
     addFilesToUploadQueue(filePaths);
     
     m_statusLabel->setText("文件已提交上传，正在处理...");
 }
 
 void MainWindow::addFilesToUploadQueue(const QStringList& filePaths) {
-    // 🎯 核心实现：UI线程极简调用 - 只需把文件路径丢进队列
+    // UI线程极简调用 - 只需把文件路径丢进队列
     std::vector<std::string> stdFilePaths;
+    
     
     for (const QString& filePath : filePaths) {
         QFileInfo fileInfo(filePath);
@@ -240,10 +243,15 @@ void MainWindow::addFilesToUploadQueue(const QStringList& filePaths) {
     
     if (!stdFilePaths.empty()) {
         g_luspLogWriteImpl.WriteLogContent(LOG_INFO, "批量入队文件数: " + std::to_string(stdFilePaths.size()));
-        // 🎯 这就是全部！UI线程只需要这一行代码！
+        // UI线程只需要这一行代码！
         // 剩下的全部由通知线程和本地服务自动处理
+        auto start = std::chrono::high_resolution_clock::now();
         Lusp_SyncUploadQueue::instance().push(stdFilePaths);
+        auto end   = std::chrono::high_resolution_clock::now();
         g_luspLogWriteImpl.WriteLogContent(LOG_INFO, "已提交到上传队列，总数: " + std::to_string(stdFilePaths.size()));
+        // 计算入队耗时
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        g_luspLogWriteImpl.WriteLogContent(LOG_DEBUG, "入队耗时: " + std::to_string(duration) + " ms");
         m_statusLabel->setText(QString("已提交 %1 个文件到上传队列").arg(stdFilePaths.size()));
     }
 }

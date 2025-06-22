@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [-Iinclude, -I3rdParty/include, -ID:/Qt/6.5.3/msvc2019_64/include, -ID:/Qt/6.5.3/msvc2019_64/include/QtCore, -ID:/Qt/6.5.3/msvc2019_64/include/QtWidgets, -ID:/Qt/6.5.3/msvc2019_64/include/QtGui]

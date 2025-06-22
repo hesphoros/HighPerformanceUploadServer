@@ -77,7 +77,6 @@
 #define UNICONV_EXPORT
 #endif
 
-#define DEBUG
 
 // C++ standard version detection
 #if defined(_MSC_VER)
@@ -127,7 +126,7 @@ private:
 	 */
 	struct IconvDeleter {
 		void operator()(iconv_t cd) const {
-			std::cerr << "Closing iconv_t: " << cd << std::endl;
+            // std::cerr << "Closing iconv_t: " << cd << std::endl;
 			// call iconv_close to release the iconv descriptor only if it is valid
 			if (cd != reinterpret_cast<iconv_t>(-1)) {
 				iconv_close(cd);

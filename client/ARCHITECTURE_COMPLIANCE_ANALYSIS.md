@@ -139,46 +139,7 @@ void sendNotificationToLocalService(const Lusp_SyncUploadFileInfo& fileInfo) {
 - ✅ 不依赖Qt的QMutex、QThread等
 - ✅ 可移植到任何支持C++11的平台
 
-## 🔍 违背问题修复对比
 
-### 修复前的主要问题
-
-❌ **UI层职责过重**
-```cpp
-// 旧实现：UI依赖UploadManager
-m_uploadManager->addFiles(filePaths);
-connect(m_uploadManager.get(), &UploadManager::uploadProgress, ...);
-```
-
-❌ **没有使用新的行级锁队列**
-```cpp
-// 旧实现：仍使用旧队列系统
-m_uploadQueue->enqueue(uploadFile);
-```
-
-❌ **架构层次混乱**
-- 缺少独立的通知线程层
-- 本地服务通信层缺失
-- 职责分离不清晰
-
-### 修复后的改进
-
-✅ **UI层极简化**
-```cpp
-// 新实现：UI只需一行代码
-Lusp_SyncUploadQueue::instance().push(stdFilePaths);
-```
-
-✅ **使用新的行级锁队列**
-```cpp
-// 新实现：ThreadSafeRowLockQueue + 通知线程
-ThreadSafeRowLockQueue<Lusp_SyncUploadFileInfo> uploadQueue;
-```
-
-✅ **架构层次清晰**
-- UI层：只负责`queue.push()`
-- 通知线程层：独立工作，条件变量唤醒
-- 本地服务层：架构预留，接口清晰
 
 ## 📊 性能表现验证
 

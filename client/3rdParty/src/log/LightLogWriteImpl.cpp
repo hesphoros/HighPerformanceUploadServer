@@ -33,7 +33,7 @@ void LightLogWrite_Impl::SetLogsFileName(const std::wstring& sFilename)
 void LightLogWrite_Impl::SetLogsFileName(const std::string& sFilename)
 {
 	std::wstring wFilename = UniConv::GetInstance()->LocaleToWideString(sFilename);
-	//Utf8ConvertsToUcs4(sFilename)
+
 	SetLogsFileName(wFilename);
 }
 

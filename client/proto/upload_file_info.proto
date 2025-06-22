@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package lusp;
+
+// 文件上传状态
+enum Lusp_UploadStatusInf {
+    LUSP_UPLOAD_STATUS_IDENTIFIERS_COMPLETED = 0;   // 成功
+    LUSP_UPLOAD_STATUS_IDENTIFIERS_PENDING   = 1;   // 等待上传
+    LUSP_UPLOAD_STATUS_IDENTIFIERS_UPLOADING = 2;   // 上传部分
+    LUSP_UPLOAD_STATUS_IDENTIFIERS_REJECTED  = 3;   // 拒绝上传
+    LUSP_UPLOAD_STATUS_IDENTIFIERS_FAILED    = 4;   // 失败
+    LUSP_UPLOAD_STATUS_IDENTIFIERS_UNDEFINED = 5;   // 未定义
+}
+
+// 上传文件类型
+enum Lusp_UploadFileTyped {
+    LUSP_UPLOADTYPE_DOCUMENT = 0;    // 文档类型
+    LUSP_UPLOADTYPE_IMAGE = 1;       // 图片类型
+    LUSP_UPLOADTYPE_VIDEO = 2;       // 视频类型
+    LUSP_UPLOADTYPE_AUDIO = 3;       // 音频类型
+    LUSP_UPLOADTYPE_ARCHIVE = 4;     // 压缩包类型
+    LUSP_UPLOADTYPE_CODE = 5;        // 代码文件
+    LUSP_UPLOADTYPE_UNDEFINED = 6;   // 未知类型
+}
+
+// 文件存在策略
+enum Lusp_FileExistPolicy {
+    LUSP_FILE_EXIST_POLICY_OVERWRITE = 0;   // 覆盖已存在的文件
+    LUSP_FILE_EXIST_POLICY_SKIP = 1;        // 跳过已存在的文件
+    LUSP_FILE_EXIST_POLICY_RENAME = 2;      // 重命名已存在的文件
+    LUSP_FILE_EXIST_POLICY_UNDEFINED = 3;   // 未定义策略
+}
+
+// 同步上传文件信息结构体
+message Lusp_SyncUploadFileInfo {
+    Lusp_UploadFileTyped eUploadFileTyped = 1;      // 文件类型
+    string sLanClientDevice = 2;                    // 客户端设备名称
+    uint64 sSyncFileSizeValue = 3;                  // 同步文件大小
+    string sFileFullNameValue = 4;                  // 同步全路径名称
+    string sOnlyFileNameValue = 5;                  // 仅仅文件名
+    string sFileRecordTimeValue = 6;                // 文件记录时间
+    string sFileMd5ValueInfo = 7;                   // 文件MD5值
+    Lusp_FileExistPolicy eFileExistPolicy = 8;      // 文件存在策略
+    string sAuthTokenValues = 9;                    // WAN上传时的tokenkey
+    uint64 uUploadTimeStamp = 10;                   // 上传时间戳（毫秒级）
+    Lusp_UploadStatusInf eUploadStatusInf = 11;     // 上传状态
+    string sDescriptionInfo = 12;                   // 描述信息
+}

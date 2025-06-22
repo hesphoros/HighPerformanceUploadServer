@@ -1,14 +1,7 @@
-#include "FileInfo.h"
+#include "FileInfo/FileInfo.h"
 #include "log_headers.h"
 
 #pragma comment(lib, "rpcrt4.lib")
-
-Lusp_SyncUploadFileInfoHandler::Lusp_SyncUploadFileInfoHandler()
-    : m_uploadedBytesCount(0)
-{
-    initializeDefaults();
-}
-
 
 
 std::string Lusp_SyncUploadFileInfoHandler::getComputerName()
@@ -129,46 +122,46 @@ void Lusp_SyncUploadFileInfoHandler::updateFileInfoFromFileSystem()
     const std::string &filePath = this->getFilePath();
     if (filePath.empty()) {
         g_luspLogWriteImpl.WriteLogContent(LOG_ERROR, "文件路径为空，无法更新文件信息");
+        m_valid = false;
+        m_error = "文件路径为空，无法更新文件信息";
         return;
     }
     std::filesystem::path path(filePath);
     if (!std::filesystem::exists(path)) {
         g_luspLogWriteImpl.WriteLogContent(LOG_ERROR, "文件不存在: " + filePath);
+        m_valid = false;
+        m_error = "文件不存在: " + filePath;
         return; // 文件不存在，无法更新信息
     }
     setFileSize(std::filesystem::file_size(path));
-    
     // 更新文件名（获取最后一个路径组件）（可能路径中的文件名与实际文件名不同）
     setFileName(path.filename().string());
     // 更新记录时间
     setRecordTime(getCurrentTimeString()); // 使用当前时间作为记录时间
-    
     if(getMd5Hash().empty()) {
        // 计算md5
+         if (!calculateFileMd5ValueInfo()) {
+              g_luspLogWriteImpl.WriteLogContent(LOG_ERROR, "计算MD5值失败: " + filePath);
+         }
     }
-
-}
-
-Lusp_SyncUploadFileInfoHandler::Lusp_SyncUploadFileInfoHandler
-    (const Lusp_SyncUploadFileInfo & fileInfo)
-    : m_fileInfo(fileInfo)
-    , m_uploadedBytesCount(0)
-{   
-   
-    initializeDefaults();
-    
 }
 
 Lusp_SyncUploadFileInfoHandler::Lusp_SyncUploadFileInfoHandler(const std::string &filePath)
-    : m_uploadedBytesCount(0)
+    : m_uploadedBytesCount(0), m_valid(false)
 {
     initializeDefaults();
-    this->setFileInfoPath(filePath); // 设置文件信息路径
-    m_fileInfo.eUploadFileTyped = this->detectFileType(filePath); // 检测文件类型
+    if (filePath.empty() || !std::filesystem::exists(filePath)) {
+        m_error = "文件路径无效或文件不存在";
+        return;
+    }
+    this->setFileInfoPath(filePath);
+    m_fileInfo.eUploadFileTyped = this->detectFileType(filePath);
     updateFileInfoFromFileSystem();
+    // 可扩展更多字段校验
+    m_valid = true;
 }
 
-std::string Lusp_SyncUploadFileInfoHandler::getFormatUploadTimestamp()
+std::string Lusp_SyncUploadFileInfoHandler::getFormatUploadTimestamp() const
 {
     std::time_t uploadTime = m_fileInfo.uUploadTimeStamp / 1000; // 转换为秒
     std::tm* timeInfo = std::localtime(&uploadTime);

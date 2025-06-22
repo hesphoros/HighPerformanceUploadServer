@@ -9,6 +9,7 @@
 #include "log/LightLogWriteImpl.h"
 
 extern LightLogWrite_Impl g_luspLogWriteImpl;
+extern LightLogWrite_Impl g_LogSyncUploadQueueInfo;
 // 日志宏定义
 constexpr const char* LOG_INFO    = "[  INFO   ]";
 constexpr const char* LOG_ERROR   = "[  ERROR  ]";

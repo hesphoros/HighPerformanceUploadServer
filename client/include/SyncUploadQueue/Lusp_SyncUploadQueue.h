@@ -1,9 +1,9 @@
 #ifndef INCLUDED_LUSP_UPLOAD_QUEUE_H
 #define INCLUDED_LUSP_UPLOAD_QUEUE_H
 
+class Lusp_SyncUploadQueuePrivate;
 
 #ifdef _MSC_VER
-#pragma once
 // utf-8
 #pragma execution_character_set("utf-8")
 #endif // _MSC_VER
@@ -21,10 +21,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <memory>
-#include <functional>
-#include <atomic>
-#include "ThreadSafeRowLockQueue/ThreadSafeRowLockQueue.hpp"
-
 
 /**
  * @brief 高性能行级锁上传队列 - 使用标准C++实现
@@ -32,7 +28,7 @@
  * 核心设计：
  * - 入队锁和出队锁分离，UI线程和通知线程不互相阻塞
  * - 条件变量精确唤醒机制
- * - 纯C++标准库实现，不依赖Qt
+ * - 纯C++标准库实现
  */
 class Lusp_SyncUploadQueue {
 public:
@@ -67,8 +63,7 @@ private:
     Lusp_SyncUploadQueue& operator=(const Lusp_SyncUploadQueue&) = delete;
 
 private:
-    class Impl;
-    std::unique_ptr<Impl> d;
+    std::unique_ptr<Lusp_SyncUploadQueuePrivate> d;
 };
 
 

@@ -4,7 +4,10 @@
 // see http://create.stephan-brumme.com/disclaimer.html
 //
 
-#pragma once
+#ifndef LUSP_HASH_LIBRARY_MD5_H
+#define LUSP_HASH_LIBRARY_MD5_H
+//#pragma once
+
 
 //#include "hash.h"
 #include <string>
@@ -76,3 +79,6 @@ private:
   /// hash, stored as integers
   uint32_t m_hash[HashValues];
 };
+
+
+#endif // LUSP_HASH_LIBRARY_MD5_H

@@ -1,5 +1,7 @@
-#pragma once
-#include "FileInfo/FileInfo.h"
+#ifndef FILEINFO_QT_ADAPTER_H
+#define FILEINFO_QT_ADAPTER_H
+
+#include "FileInfo.h"
 #include <QString>
 
 /**
@@ -7,13 +9,12 @@
  */
 class FileInfoQtAdapter {
 public:
-    // 支持直接用Handler或文件路径构造
+    // 只允许用文件路径或Handler构造，不允许结构体构造
     FileInfoQtAdapter(const Lusp_SyncUploadFileInfoHandler& handler)
         : m_handler(handler) {}
     explicit FileInfoQtAdapter(const QString& filePath)
         : m_handler(filePath.toStdString()) {}
-    explicit FileInfoQtAdapter(const Lusp_SyncUploadFileInfo& info)
-        : m_handler(info) {}
+    // explicit FileInfoQtAdapter(const Lusp_SyncUploadFileInfo& info) = delete;
 
     // Qt友好getter
     QString getId() const { return QString::fromStdString(m_handler.getId()); }
@@ -30,15 +31,7 @@ public:
     int getProgressPercentage() const { return m_handler.getProgressPercentage(); }
     QString getFormatUploadTimestamp() const { return QString::fromStdString(m_handler.getFormatUploadTimestamp()); }
 
-    // Qt友好setter
-    void setId(const QString& id) { m_handler.setId(id.toStdString()); }
-    void setFilePath(const QString& path) { m_handler.setFileInfoPath(path.toStdString()); }
-    void setFileName(const QString& name) { m_handler.setFileName(name.toStdString()); }
-    void setMd5Hash(const QString& md5) { m_handler.setMd5Hash(md5.toStdString()); }
-    void setClientDevice(const QString& device) { m_handler.setClientDevice(device.toStdString()); }
-    void setDescription(const QString& desc) { m_handler.setDescription(desc.toStdString()); }
-    void setRecordTime(const QString& recordTime) { m_handler.setRecordTime(recordTime.toStdString()); }
-
+    // 不再暴露setter接口
     // 获取原始Handler和结构体
     const Lusp_SyncUploadFileInfoHandler& getHandler() const { return m_handler; }
     Lusp_SyncUploadFileInfoHandler& getHandler() { return m_handler; }
@@ -47,3 +40,6 @@ public:
 private:
     Lusp_SyncUploadFileInfoHandler m_handler;
 };
+
+
+#endif // FILEINFO_QT_ADAPTER_H

@@ -29,12 +29,12 @@ private slots:
 private:
     void setupUI();
     void connectSignals();
-    void setupUploadQueue();  // 设置极简上传队列
+    void setupUploadQueue();
     void addFilesToList(const QStringList& filePaths);
-    void addFilesToUploadQueue(const QStringList& filePaths);  // 🎯 极简上传接口
+    void addFilesToUploadQueue(const QStringList& filePaths);
 
 private:
-    // UI组件
+
     QWidget* m_centralWidget;
     QVBoxLayout* m_mainLayout;    QHBoxLayout* m_buttonLayout;
     
@@ -46,5 +46,4 @@ private:
     QLabel* m_statusLabel;
     QProgressBar* m_overallProgressBar;
     
-    // 注意：不再需要UploadManager！UI极简，只需要上传队列
 };

@@ -1,3 +1,7 @@
+#ifndef THREAD_SAFE_ROW_LOCK_QUEUE_HPP
+#define THREAD_SAFE_ROW_LOCK_QUEUE_HPP
+
+
 #include <queue>
 #include <mutex>
 #include <condition_variable>
@@ -92,3 +96,5 @@ public:
         mSize.store(0);
     }
 };
+
+#endif // THREAD_SAFE_ROW_LOCK_QUEUE_HPP
