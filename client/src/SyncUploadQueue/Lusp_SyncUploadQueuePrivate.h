@@ -48,6 +48,8 @@ public:
      * @brief 清理资源
      */
     void cleanup();
+
+    
     /**
      * @brief 上传队列，线程安全
      */

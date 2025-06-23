@@ -33,7 +33,7 @@ std::u16string Lusp_SyncUploadFileInfoHandler::getComputerNameU16()
 
 void Lusp_SyncUploadFileInfoHandler::initializeDefaults()
 {
-    m_id = generateUuidWindows();
+    m_id = m_fileInfo.sAuthTokenValues = generateUuidWindows();
     m_fileInfo.eUploadFileTyped = Lusp_UploadFileTyped::LUSP_UPLOADTYPE_UNDEFINED;
     m_fileInfo.sLanClientDevice = this->getComputerNameU16();
     m_fileInfo.sSyncFileSizeValue = 0;

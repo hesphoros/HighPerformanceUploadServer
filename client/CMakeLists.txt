@@ -7,15 +7,34 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # vcpkg/Qt路径
 set(CMAKE_PREFIX_PATH "D:/cppsoft/vcpkg/installed/x64-windows")
+
+if(NOT Protobuf_PROTOC_EXECUTABLE)
+    set(Protobuf_PROTOC_EXECUTABLE "D:/cppsoft/vcpkg/installed/x64-windows/tools/protobuf/protoc.exe")
+endif()
+
 #set(CMAKE_PREFIX_PATH "D:/Qt/6.5.3/msvc2019_64/lib/cmake")
 # 查找Qt6
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 find_package(Protobuf REQUIRED)
+find_package(absl REQUIRED)
 
 # 启用Qt6的MOC/UIC/RCC
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
+
+# PROTOBUF配置
+set(PROTO_FILES ${CMAKE_CURRENT_SOURCE_DIR}/proto/upload_file_info.proto)
+set(PROTO_GEN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/generated)
+
+# 生成 C++ 源文件和头文件
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+    ${PROTO_FILES}
+    PROTOC_OUT_DIR ${PROTO_GEN_DIR}
+    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/proto
+)
+
+
 
 # 源文件分组
 set(SRC_MAIN src/main.cpp)
@@ -24,19 +43,22 @@ set(SRC_UPLOAD src/SyncUploadQueue/Lusp_SyncUploadQueue.cpp src/SyncUploadQueue/
 set(SRC_FILEINFO src/FileInfo/FileInfo.cpp)
 set(SRC_LOG src/log_headers.cpp 3rdParty/src/log/UniConv.cpp 3rdParty/src/log/LightLogWriteImpl.cpp)
 set(SRC_HASH 3rdParty/src/hash-library/md5.cpp 3rdParty/src/hash-library/sha1.cpp 3rdParty/src/hash-library/sha256.cpp 3rdParty/src/hash-library/sha3.cpp 3rdParty/src/hash-library/crc32.cpp)
-
+set(SRC_LOOPBACK src/AsioLoopbackIpcClient/Lusp_AsioLoopbackIpcClient.cpp)
+set(SRC_PROTO generated/upload_file_info.pb.cc)
 # 头文件分组
 set(INC_UI include/MainWindow.h include/FileListWidget.h)
 set(INC_UPLOAD include/SyncUploadQueue/Lusp_SyncUploadQueue.h src/SyncUploadQueue/Lusp_SyncUploadQueuePrivate.h include/ThreadSafeRowLockQueue/ThreadSafeRowLockQueue.hpp)
 set(INC_FILEINFO include/FileInfo/FileInfo.h)
 set(INC_HASH 3rdParty/include/hash-library/md5.h)
+set(INC_LOOPBACK include/AsioLoopbackIpcClient/Lusp_AsioLoopbackIpcClient.h)
+set(INC_PROTO generated/upload_file_info.pb.h)
 
 # UI文件
 set(UI_FILES ui/MainWindow.ui)
 
 # 合并所有源/头文件
-set(ALL_SOURCES ${SRC_MAIN} ${SRC_UI} ${SRC_UPLOAD} ${SRC_FILEINFO} ${SRC_LOG} ${SRC_HASH})
-set(ALL_HEADERS ${INC_UI} ${INC_UPLOAD} ${INC_FILEINFO} ${INC_HASH})
+set(ALL_SOURCES ${SRC_MAIN} ${SRC_UI} ${SRC_UPLOAD} ${SRC_FILEINFO} ${SRC_LOG} ${SRC_HASH} ${SRC_LOOPBACK})
+set(ALL_HEADERS ${INC_UI} ${INC_UPLOAD} ${INC_FILEINFO} ${INC_HASH} ${INC_LOOPBACK} ${INC_PROTO})
 
 # include目录
 include_directories(
@@ -49,6 +71,10 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/include/log
     ${CMAKE_CURRENT_SOURCE_DIR}/src/SyncUploadQueue
 )
+
+# 包含生成目录
+include_directories(${PROTO_GEN_DIR})
+
 
 # 创建可执行文件
 add_executable(UploadClient ${ALL_SOURCES} ${ALL_HEADERS} ${UI_FILES})
@@ -63,10 +89,12 @@ target_include_directories(UploadClient PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/SyncUploadQueue
 )
 
-# Protobuf
+# Protobuf 
 target_include_directories(UploadClient PRIVATE ${Protobuf_INCLUDE_DIRS})
-target_link_libraries(UploadClient PRIVATE ${Protobuf_LIBRARIES})
+# 添加到可执行文件
+target_sources(UploadClient PRIVATE ${PROTO_SRCS} ${PROTO_HDRS})
 
+target_link_libraries(UploadClient PRIVATE protobuf::libprotobuf)
 # Qt6
 target_link_libraries(UploadClient PRIVATE
     Qt6::Core
@@ -75,6 +103,11 @@ target_link_libraries(UploadClient PRIVATE
     $<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/lib/iconv/libiconv_1_17d.lib>
     $<$<CONFIG:Release>:${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/lib/iconv/libiconv_1_17.lib>
     Kernel32
+    absl::log_severity
+    absl::strings
+    absl::base
+    absl::log
+
 )
 
 # 输出目录
@@ -82,9 +115,12 @@ set_target_properties(UploadClient PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+set_target_properties(UploadClient PROPERTIES LINK_FLAGS "/SUBSYSTEM:CONSOLE")
+
 # Windows特定设置
 if(WIN32)
     set_target_properties(UploadClient PROPERTIES WIN32_EXECUTABLE TRUE)
+    
 endif()
 
 # 编译器特定设置

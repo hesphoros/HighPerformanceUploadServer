@@ -11,6 +11,8 @@
 
 extern LightLogWrite_Impl g_luspLogWriteImpl;
 extern LightLogWrite_Impl g_LogSyncUploadQueueInfo;
+extern LightLogWrite_Impl g_LogSyncNotificationService;
+extern LightLogWrite_Impl g_LogAsioLoopbackIpcClient;
 
 #define LUSP_UNICONV   UniConv::GetInstance()
 

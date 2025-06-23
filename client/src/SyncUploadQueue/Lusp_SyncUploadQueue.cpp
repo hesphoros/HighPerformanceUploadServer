@@ -1,5 +1,6 @@
 // PIMPL方案：Lusp_SyncUploadQueuePrivate.h 只在 src/SyncUploadQueue/ 下 include，隐藏实现细节
 #include "Lusp_SyncUploadQueue.h"
+#include "ThreadSafeRowLockQueue/ThreadSafeRowLockQueue.hpp"
 #include "Lusp_SyncUploadQueuePrivate.h"
 #include "FileInfo/FileInfo.h"
 #include "qglobal.h"

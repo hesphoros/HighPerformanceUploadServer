@@ -930,6 +930,69 @@ std::string UniConv::LocaleConvertUtf8(const char* sInput)
     return LocaleConvertUtf8(std::string(sInput));
 }
 
+std::string UniConv::ToUtf8FromUtf16LEWin(const std::u16string& input)
+{
+    if (input.empty()) return "";
+
+    // Windows 下 WCHAR == wchar_t == UTF-16LE
+    // 这里需要 reinterpret_cast 为 wchar_t*
+    const wchar_t* src = reinterpret_cast<const wchar_t*>(input.data());
+    int src_len = static_cast<int>(input.size());
+
+    // 获取转换后 UTF-8 的长度
+    int utf8_len = ::WideCharToMultiByte(
+        CP_UTF8,               // 目标编码：UTF-8
+        0,                     // 默认标志
+        src,                   // 输入 UTF-16 字符串
+        src_len,               // 输入长度
+        nullptr, 0,            // 先获取目标长度
+        nullptr, nullptr
+    );
+
+    if (utf8_len <= 0) return "";  // 转换失败或空
+
+    std::string utf8_str(utf8_len, 0);  // 分配字符串内存
+
+    // 执行转换
+    int result = ::WideCharToMultiByte(
+        CP_UTF8,
+        0,
+        src,
+        src_len,
+        utf8_str.data(),
+        utf8_len,
+        nullptr, nullptr
+    );
+
+    if (result == 0) return "";  // 再次确认转换是否成功
+
+    return utf8_str;
+}
+
+
+std::u16string UniConv::ToUtf16LEFromUtf8Win(const std::string& input)
+{
+    if (input.empty()) return u"";
+
+    int utf16_len = ::MultiByteToWideChar(
+        CP_UTF8, 0,
+        input.data(),
+        static_cast<int>(input.size()),
+        nullptr, 0
+    );
+
+    if (utf16_len <= 0) return u"";
+
+    std::u16string utf16_str(utf16_len, 0);
+    ::MultiByteToWideChar(
+        CP_UTF8, 0,
+        input.data(),
+        static_cast<int>(input.size()),
+        reinterpret_cast<wchar_t*>(&utf16_str[0]),
+        utf16_len
+    );
+    return utf16_str;
+}
 
 // ===================== Error Handling Related =====================
 std::string UniConv::GetIconvErrorString(int err_code) {

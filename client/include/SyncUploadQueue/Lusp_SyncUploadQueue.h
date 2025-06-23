@@ -2,6 +2,7 @@
 #define INCLUDED_LUSP_UPLOAD_QUEUE_H
 
 class Lusp_SyncUploadQueuePrivate;
+class Lusp_SyncFilesNotificationService; // 前置声明
 
 #ifdef _MSC_VER
 // utf-8
@@ -21,6 +22,7 @@ class Lusp_SyncUploadQueuePrivate;
 #include <mutex>
 #include <condition_variable>
 #include <memory>
+#include "ThreadSafeRowLockQueue/ThreadSafeRowLockQueue.hpp"
 
 /**
  * @brief 高性能行级锁上传队列 - 使用标准C++实现
@@ -54,6 +56,7 @@ public:
     bool isActive() const;
     bool empty() const;
 
+    friend class Lusp_SyncFilesNotificationService;
 private:
     Lusp_SyncUploadQueue();
     ~Lusp_SyncUploadQueue();

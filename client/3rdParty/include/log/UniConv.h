@@ -691,6 +691,10 @@ public:
 	std::wstring         U16StringToWString(const std::u16string& u16str);
 	std::wstring		 U16StringToWString(const char16_t* u16str);
 
+	std::string          ToUtf8FromUtf16LEWin(const std::u16string& input);
+
+	std::u16string       ToUtf16LEFromUtf8Win(const std::string& input);
+
 	/**
 	 * @brief Encoding to string
 	 *

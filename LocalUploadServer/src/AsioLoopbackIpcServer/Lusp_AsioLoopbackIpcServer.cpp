@@ -1,0 +1,62 @@
+#include "AsioLoopbackIpcServer/Lusp_AsioLoopbackIpcServer.h"
+#include <iostream>
+#include <chrono>
+#include <thread>
+
+
+// ---- Server ----
+Lusp_AsioLoopbackIpcServer::Lusp_AsioLoopbackIpcServer(asio::io_context& io_context, const Lusp_AsioIpcConfig& config)
+    : io_context_(io_context),
+      acceptor_(io_context, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), config.port)),
+      config_(config) {}
+
+void Lusp_AsioLoopbackIpcServer::start(MessageCallback on_message) {
+    on_message_ = on_message;
+    do_accept();
+}
+
+void Lusp_AsioLoopbackIpcServer::do_accept() {
+    auto socket = std::make_shared<asio::ip::tcp::socket>(io_context_);
+    acceptor_.async_accept(*socket, [this, socket](std::error_code ec) {
+        if (!ec) {
+            {
+                std::lock_guard<std::mutex> lock(clients_mutex_);
+                clients_.insert(socket);
+            }
+            do_read(socket);
+        }
+        do_accept();
+    });
+}
+
+void Lusp_AsioLoopbackIpcServer::do_read(std::shared_ptr<asio::ip::tcp::socket> socket) {
+    auto buffer = std::make_shared<std::vector<char>>(config_.buffer_size);
+    socket->async_read_some(asio::buffer(*buffer), [this, socket, buffer](std::error_code ec, std::size_t len) {
+        if (!ec && on_message_) {
+            std::string raw(buffer->data(), len);
+            std::string msg = (raw);
+            on_message_(msg, socket);
+            do_read(socket);
+        } else {
+            std::lock_guard<std::mutex> lock(clients_mutex_);
+            clients_.erase(socket);
+        }
+    });
+}
+
+
+
+
+void Lusp_AsioLoopbackIpcServer::broadcast(const std::string& message) {
+    std::lock_guard<std::mutex> lock(clients_mutex_);
+    for (auto& client : clients_) {
+        if (client && client->is_open()) {
+            // 用 shared_ptr 管理 buffer 生命周期
+            auto data = std::make_shared<std::string>(message);
+            asio::async_write(*client, asio::buffer(*data),
+                [data](std::error_code, std::size_t) {
+                    // data 生命周期自动延长到回调结束
+                });
+        }
+    }
+}

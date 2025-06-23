@@ -1,0 +1,19 @@
+<mxfile host="app.diagrams.net">
+<diagram name="分层架构图" id="layered-architecture-20250623">
+<mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<!-- UI 层 -->
+<mxCell id="ui" value="UI层\n(MainWindow, 文件选择, 进度展示)" style="swimlane;rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1976d2;fontSize=16;shadow=1;" vertex="1" parent="1"><mxGeometry x="60" y="60" width="400" height="120" as="geometry"/></mxCell>
+<!-- 业务逻辑层 -->
+<mxCell id="biz" value="业务逻辑层\n(上传队列、文件信息管理、编码转换、日志)" style="swimlane;rounded=1;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#fbc02d;fontSize=16;shadow=1;" vertex="1" parent="1"><mxGeometry x="60" y="200" width="400" height="160" as="geometry"/></mxCell>
+<!-- 服务层 -->
+<mxCell id="svc" value="服务层\n(NotificationService, 网络上传, 本地服务交互)" style="swimlane;rounded=1;whiteSpace=wrap;html=1;fillColor=#ede7f6;strokeColor=#7b1fa2;fontSize=16;shadow=1;" vertex="1" parent="1"><mxGeometry x="60" y="380" width="400" height="160" as="geometry"/></mxCell>
+<!-- 箭头 UI->业务逻辑 -->
+<mxCell id="ui-biz" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#1976d2;strokeWidth=2;" edge="1" parent="1" source="ui" target="biz"><mxGeometry relative="1" as="geometry"/></mxCell>
+<!-- 箭头 业务逻辑->服务层 -->
+<mxCell id="biz-svc" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;strokeColor=#7b1fa2;strokeWidth=2;" edge="1" parent="1" source="biz" target="svc"><mxGeometry relative="1" as="geometry"/></mxCell>
+</root></mxGraphModel>
+</diagram>
+</mxfile>
