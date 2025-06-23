@@ -15,7 +15,7 @@
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
-    
+    SetConsoleOutputCP(CP_UTF8);
     // 设置应用程序信息
     app.setApplicationName("SyncFilesUploadClient");
     app.setApplicationVersion("1.0.0");

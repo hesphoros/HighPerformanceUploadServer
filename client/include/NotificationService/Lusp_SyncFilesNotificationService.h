@@ -11,8 +11,6 @@
 #include "FileInfo/FileInfo.h"
 #include "SyncUploadQueue/Lusp_SyncUploadQueue.h"
 #include "AsioLoopbackIpcClient/Lusp_AsioLoopbackIpcClient.h"
-#include "upload_file_info.pb.h"
-
 
 /**
  * @class Lusp_SyncFilesNotificationService
@@ -106,8 +104,8 @@ private:
     Lusp_AsioIpcConfig ipcConfig_;
     std::shared_ptr<asio::io_context> ioContext_;
     std::thread ioThread_;
-    // proto结构体转换辅助
-    static lusp::PROTOLusp_SyncUploadFileInfo ToProto(const Lusp_SyncUploadFileInfo& info);
+    
+    std::string ToFlatBuffer(const Lusp_SyncUploadFileInfo& info);
     static const Lusp_AsioIpcConfig kDefaultIpcConfig;
 };
 

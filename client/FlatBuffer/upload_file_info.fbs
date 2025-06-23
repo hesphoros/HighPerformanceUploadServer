@@ -1,0 +1,66 @@
+// upload_file_info.fbs
+// 由 C++ 结构体自动转换，适用于 FlatBuffers
+
+// ========================
+// 命名空间定义
+// ========================
+namespace UploadClient.Sync;
+
+// ========================
+// 文件上传状态枚举
+// ========================
+enum FBS_SyncUploadStatusInf : int {
+  FBS_SYNC_UPLOAD_STATUS_COMPLETED  = 0, // 成功
+  FBS_SYNC_UPLOAD_STATUS_PENDING    = 1, // 等待上传
+  FBS_SYNC_UPLOAD_STATUS_UPLOADING  = 2, // 上传部分
+  FBS_SYNC_UPLOAD_STATUS_REJECTED   = 3, // 拒绝上传
+  FBS_SYNC_UPLOAD_STATUS_FAILED     = 4, // 失败
+  FBS_SYNC_UPLOAD_STATUS_UNDEFINED  = 5  // 未定义
+}
+
+// ========================
+// 上传文件类型枚举
+// ========================
+enum FBS_SyncUploadFileTyped : int {
+  FBS_SYNC_UPLOADTYPE_DOCUMENT   = 0, // 文档类型
+  FBS_SYNC_UPLOADTYPE_IMAGE      = 1, // 图片类型
+  FBS_SYNC_UPLOADTYPE_VIDEO      = 2, // 视频类型
+  FBS_SYNC_UPLOADTYPE_AUDIO      = 3, // 音频类型
+  FBS_SYNC_UPLOADTYPE_ARCHIVE    = 4, // 压缩包类型
+  FBS_SYNC_UPLOADTYPE_CODE       = 5, // 代码文件
+  FBS_SYNC_UPLOADTYPE_UNDEFINED  = 6  // 未知类型
+}
+
+// ========================
+// 文件存在策略枚举
+// ========================
+enum FBS_SyncFileExistPolicy : int {
+  FBS_SYNC_FILE_EXIST_POLICY_OVERWRITE = 0, // 覆盖
+  FBS_SYNC_FILE_EXIST_POLICY_SKIP      = 1, // 跳过
+  FBS_SYNC_FILE_EXIST_POLICY_RENAME    = 2, // 重命名
+  FBS_SYNC_FILE_EXIST_POLICY_UNDEFINED = 3  // 未定义
+}
+
+// ========================
+// 同步上传文件信息结构体
+// ========================
+table FBS_SyncUploadFileInfo {
+  e_upload_file_typed:        FBS_SyncUploadFileTyped;   // 上传文件类型
+  s_lan_client_device:        string;                    // 局域网客户端设备名
+  s_sync_file_size_value:     ulong;                     // 文件大小
+  s_file_full_name_value:     string;                    // 文件完整路径名
+  s_only_file_name_value:     string;                    // 仅文件名
+  s_file_record_time_value:   string;                    // 文件记录时间
+  s_file_md5_value_info:      string;                    // 文件MD5值
+  e_file_exist_policy:        FBS_SyncFileExistPolicy;   // 文件存在策略
+  s_auth_token_values:        string;                    // 认证Token
+  u_upload_time_stamp:        ulong;                     // 上传时间戳
+  e_upload_status_inf:        FBS_SyncUploadStatusInf;   // 上传状态
+  s_description_info:         string;                    // 描述信息
+  enqueue_time_ms:            ulong;                     // 入队时间戳（毫秒）
+}
+
+// ========================
+// 根类型定义
+// ========================
+root_type FBS_SyncUploadFileInfo;

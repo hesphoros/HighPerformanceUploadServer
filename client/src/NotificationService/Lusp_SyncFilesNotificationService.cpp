@@ -11,8 +11,9 @@
 #include "SyncUploadQueue/Lusp_SyncUploadQueue.h"
 #include "Lusp_SyncUploadQueuePrivate.h"
 #include "AsioLoopbackIpcClient/Lusp_AsioLoopbackIpcClient.h"
-#include "upload_file_info.pb.h"
 #include "asio/asio/io_context.hpp"
+#include "upload_file_info_generated.h"
+#include "flatbuffers/flatbuffers.h"
 
 const Lusp_AsioIpcConfig Lusp_SyncFilesNotificationService::kDefaultIpcConfig = {};
 
@@ -32,11 +33,9 @@ Lusp_SyncFilesNotificationService::Lusp_SyncFilesNotificationService(Lusp_SyncUp
     ioContext_ = std::make_shared<asio::io_context>();
     ipcClient_ = std::make_shared<Lusp_AsioLoopbackIpcClient>(*ioContext_, ipcConfig_);
     ipcClient_->connect();
-    // 自动设置socketSendFunc为proto序列化并发送
+    // 自动设置socketSendFunc为FlatBuffers序列化并发送
     setSocketSendFunc([this](const Lusp_SyncUploadFileInfo& info) {
-        lusp::PROTOLusp_SyncUploadFileInfo protoMsg = ToProto(info);
-        std::string out;
-        protoMsg.SerializeToString(&out);
+        std::string out = ToFlatBuffer(info);
         if (ipcClient_) {
             ipcClient_->send(out);
         }
@@ -135,8 +134,8 @@ void Lusp_SyncFilesNotificationService::notificationLoop() {
             if (socketSendFunc) {
                 socketSendFunc(fileInfo);
             }
-            
-            std::cout << "[NotificationService] 通过socket发送: " << UniConv::GetInstance()->ToLocaleFromUtf16LE( fileInfo.sFileFullNameValue )<< std::endl;
+           
+            std::cout << "[NotificationService] socket send : " << LUSP_UNICONV->ToLocaleFromUtf16LE(fileInfo.sFileFullNameValue  )<< std::endl;
             g_LogSyncNotificationService.WriteLogContent(
                 LOG_INFO, 
                 "通过socket发送: " + UniConv::GetInstance()->ToLocaleFromUtf16LE(fileInfo.sFileFullNameValue)
@@ -148,11 +147,9 @@ void Lusp_SyncFilesNotificationService::notificationLoop() {
 
 void Lusp_SyncFilesNotificationService::setIpcClient(std::shared_ptr<Lusp_AsioLoopbackIpcClient> ipcClient) {
     ipcClient_ = ipcClient;
-    // 设置socketSendFunc为自动序列化并发送proto
+    // 设置socketSendFunc为自动序列化并发送FlatBuffers
     setSocketSendFunc([this](const Lusp_SyncUploadFileInfo& info) {
-        lusp::PROTOLusp_SyncUploadFileInfo protoMsg = ToProto(info);
-        std::string out;
-        protoMsg.SerializeToString(&out);
+        std::string out = ToFlatBuffer(info);
         if (ipcClient_) {
             ipcClient_->send(out);
         }
@@ -163,41 +160,32 @@ void Lusp_SyncFilesNotificationService::setIpcConfig(const Lusp_AsioIpcConfig& c
     ipcConfig_ = config;
 }
 
-lusp::PROTOLusp_SyncUploadFileInfo Lusp_SyncFilesNotificationService::ToProto(const Lusp_SyncUploadFileInfo& info) {
-    lusp::PROTOLusp_SyncUploadFileInfo proto;
-    proto.set_euploadfiletyped(static_cast<lusp::PROTOLusp_UploadFileTyped>(static_cast<int>(info.eUploadFileTyped)));
-    auto utf8Str = UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sLanClientDevice);
-    printf("LanClientDevice addr: %p, value: %ls\n", info.sLanClientDevice.c_str(), info.sLanClientDevice.c_str());
-    printf("utf8Str addr: %p, value: %s\n", utf8Str.c_str(), utf8Str.c_str());
-    std::string u8str = "COMHESPHOROS";
- //   int ret;
- //   if (u8str == utf8Str)
- //       std::puts("equal");
- //   else
- //       std::puts("not equal");
-
- //       
- //   for (unsigned char ch : utf8Str) {
- //       printf("%02X ", ch);
- //   }
- //   printf("\n");
- //   for (unsigned char ch : u8str) {
- //       printf("%02X ", ch);
-	//}
-	//printf("\n");
-    proto.set_slanclientdevice(u8str);
-
-    std::cout << "set_slanClientDevide" << std::endl;
-    proto.set_slanclientdevice(UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sLanClientDevice));
-    proto.set_ssyncfilesizevalue(static_cast<uint64_t>(info.sSyncFileSizeValue));
-    proto.set_sfilefullnamevalue(UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sFileFullNameValue));
-    proto.set_sonlyfilenamevalue(UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sOnlyFileNameValue));
-    proto.set_sfilerecordtimevalue(info.sFileRecordTimeValue);
-    proto.set_sfilemd5valueinfo(info.sFileMd5ValueInfo);
-    proto.set_efileexistpolicy(static_cast<lusp::PROTOLusp_FileExistPolicy>(static_cast<int>(info.eFileExistPolicy)));
-    proto.set_sauthtokenvalues(info.sAuthTokenValues);
-    proto.set_uuploadtimestamp(info.uUploadTimeStamp);
-    proto.set_euploadstatusinf(static_cast<lusp::PROTOLusp_UploadStatusInf>(static_cast<int>(info.eUploadStatusInf)));
-    proto.set_sdescriptioninfo(UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sDescriptionInfo));
-    return proto;
+std::string Lusp_SyncFilesNotificationService::ToFlatBuffer(const Lusp_SyncUploadFileInfo& info) {
+    flatbuffers::FlatBufferBuilder builder;
+    using namespace UploadClient::Sync;
+    auto s_lan_client_device = builder.CreateString(UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sLanClientDevice));
+    auto s_file_full_name_value = builder.CreateString(UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sFileFullNameValue));
+    auto s_only_file_name_value = builder.CreateString(UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sOnlyFileNameValue));
+    auto s_file_record_time_value = builder.CreateString(info.sFileRecordTimeValue);
+    auto s_file_md5_value_info = builder.CreateString(info.sFileMd5ValueInfo);
+    auto s_auth_token_values = builder.CreateString(info.sAuthTokenValues);
+    auto s_description_info = builder.CreateString(UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sDescriptionInfo));
+    auto fb = CreateFBS_SyncUploadFileInfo(
+        builder,
+        static_cast<FBS_SyncUploadFileTyped>(static_cast<int>(info.eUploadFileTyped)),
+        s_lan_client_device,
+        static_cast<uint64_t>(info.sSyncFileSizeValue),
+        s_file_full_name_value,
+        s_only_file_name_value,
+        s_file_record_time_value,
+        s_file_md5_value_info,
+        static_cast<FBS_SyncFileExistPolicy>(static_cast<int>(info.eFileExistPolicy)),
+        s_auth_token_values,
+        info.uUploadTimeStamp,
+        static_cast<FBS_SyncUploadStatusInf>(static_cast<int>(info.eUploadStatusInf)),
+        s_description_info,
+        static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(info.enqueueTime.time_since_epoch()).count())
+    );
+    builder.Finish(fb);
+    return std::string(reinterpret_cast<const char*>(builder.GetBufferPointer()), builder.GetSize());
 }
