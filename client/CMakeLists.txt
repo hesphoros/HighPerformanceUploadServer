@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # vcpkg/Qt路径
 set(CMAKE_PREFIX_PATH "D:/cppsoft/vcpkg/installed/x64-windows")
-
+#set(CMAKE_PREFIX_PATH "D:/Qt/6.5.3/msvc2019_64/lib/cmake")
 # 查找Qt6
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 find_package(Protobuf REQUIRED)

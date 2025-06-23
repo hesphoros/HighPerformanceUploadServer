@@ -229,30 +229,33 @@ void MainWindow::onUploadClicked() {
 
 void MainWindow::addFilesToUploadQueue(const QStringList& filePaths) {
     // UI线程极简调用 - 只需把文件路径丢进队列
-    std::vector<std::string> stdFilePaths;
+    std::vector<std::u16string> u16FilePaths;
     
     
     for (const QString& filePath : filePaths) {
         QFileInfo fileInfo(filePath);
         if (fileInfo.exists() && fileInfo.isFile()) {
-            stdFilePaths.push_back(filePath.toStdString());
+            std::u16string u16Path = filePath.toStdU16String();
+            u16FilePaths.push_back(u16Path);
+
             // 日志：每个即将入队的文件
-            g_luspLogWriteImpl.WriteLogContent(LOG_DEBUG, "准备入队文件: " + filePath.toStdString());
+            std::string msg = "准备入队文件: " + filePath.toStdString(); // 本地编码
+            g_luspLogWriteImpl.WriteLogContent(LOG_DEBUG, msg);
         }
     }
     
-    if (!stdFilePaths.empty()) {
-        g_luspLogWriteImpl.WriteLogContent(LOG_INFO, "批量入队文件数: " + std::to_string(stdFilePaths.size()));
-        // UI线程只需要这一行代码！
-        // 剩下的全部由通知线程和本地服务自动处理
+    if (!u16FilePaths.empty()) {
+        g_luspLogWriteImpl.WriteLogContent(LOG_INFO, "批量入队文件数: " + std::to_string(u16FilePaths.size()));
+
         auto start = std::chrono::high_resolution_clock::now();
-        Lusp_SyncUploadQueue::instance().push(stdFilePaths);
-        auto end   = std::chrono::high_resolution_clock::now();
-        g_luspLogWriteImpl.WriteLogContent(LOG_INFO, "已提交到上传队列，总数: " + std::to_string(stdFilePaths.size()));
-        // 计算入队耗时
+        Lusp_SyncUploadQueue::instance().push(u16FilePaths);  
+        auto end = std::chrono::high_resolution_clock::now();
+
+        g_luspLogWriteImpl.WriteLogContent(LOG_INFO, "已提交到上传队列，总数: " + std::to_string(u16FilePaths.size()));
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         g_luspLogWriteImpl.WriteLogContent(LOG_DEBUG, "入队耗时: " + std::to_string(duration) + " ms");
-        m_statusLabel->setText(QString("已提交 %1 个文件到上传队列").arg(stdFilePaths.size()));
+
+        m_statusLabel->setText(QString("已提交 %1 个文件到上传队列").arg(u16FilePaths.size()));
     }
 }
 

@@ -40,8 +40,8 @@ public:
     static Lusp_SyncUploadQueue& instance();
 
    
-    void push(const std::string& filePath);                    // 推送单个文件
-    void push(const std::vector<std::string>& filePaths);      // 推送多个文件
+    void push(const std::u16string& filePath);                    // 推送单个文件
+    void push(const std::vector<std::u16string>& filePaths);      // 推送多个文件
     void push(const Lusp_SyncUploadFileInfo& fileInfo);       // 推送文件信息对象
     
    
@@ -67,18 +67,18 @@ private:
 };
 
 
-namespace Upload {
-    inline void push(const std::string& filePath) {
-        Lusp_SyncUploadQueue::instance().push(filePath);
-    }
-    
-    inline void push(const std::vector<std::string>& filePaths) {
-        Lusp_SyncUploadQueue::instance().push(filePaths);
-    }
-    
-    inline void push(const Lusp_SyncUploadFileInfo& fileInfo) {
-        Lusp_SyncUploadQueue::instance().push(fileInfo);
-    }
-}
+//namespace Upload {
+//    inline void push(const std::u16string& filePath) {
+//        Lusp_SyncUploadQueue::instance().push(filePath);
+//    }
+//    
+//    inline void push(const std::vector<std::u16string>& filePaths) {
+//        Lusp_SyncUploadQueue::instance().push(filePaths);
+//    }
+//    
+//    inline void push(const Lusp_SyncUploadFileInfo& fileInfo) {
+//        Lusp_SyncUploadQueue::instance().push(fileInfo);
+//    }
+//}
 
 #endif // INCLUDED_LUSP_UPLOAD_QUEUE_H

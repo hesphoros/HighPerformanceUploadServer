@@ -13,7 +13,7 @@ public:
     FileInfoQtAdapter(const Lusp_SyncUploadFileInfoHandler& handler)
         : m_handler(handler) {}
     explicit FileInfoQtAdapter(const QString& filePath)
-        : m_handler(filePath.toStdString()) {}
+        : m_handler(filePath.toStdU16String()) {}
     // explicit FileInfoQtAdapter(const Lusp_SyncUploadFileInfo& info) = delete;
 
     // Qt友好getter

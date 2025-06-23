@@ -17,7 +17,7 @@
 #include <string>
 #include <filesystem>
 
-
+#include "log_headers.h"
 /**
  * @brief 文件上传状态
  * @enum Lusp_UploadStatusInf
@@ -78,17 +78,17 @@ enum class Lusp_FileExistPolicy {
  */
 typedef struct  Lusp_SyncUploadFileInfo {
     Lusp_UploadFileTyped               eUploadFileTyped;            /*!< 文件类型      */
-    std::string                        sLanClientDevice;            /*!< 客户端设备名称 */
+    std::u16string                     sLanClientDevice;            /*!< 客户端设备名称 */
     size_t                             sSyncFileSizeValue;          /*!< 同步文件大小 */
-    std::string                        sFileFullNameValue;          /*!< 同步全路径名称 */
-    std::string                        sOnlyFileNameValue;          /*!< 仅仅文件名 */
+    std::u16string                     sFileFullNameValue;          /*!< 同步全路径名称 */
+    std::u16string                     sOnlyFileNameValue;          /*!< 仅仅文件名 */
     std::string                        sFileRecordTimeValue;        /*!< 文件记录时间 */
     std::string                        sFileMd5ValueInfo;           /*!< 文件MD5值 */
     Lusp_FileExistPolicy               eFileExistPolicy;            /*!< 文件存在策略 */
     std::string                        sAuthTokenValues;            /** Wan 上传时的tokenkey LAN 中不使用 */
     uint64_t                           uUploadTimeStamp;            /*!< 上传时间戳  精确级别：毫秒级*/
     Lusp_UploadStatusInf               eUploadStatusInf;            /*!< 上传状态 */
-    std::string                        sDescriptionInfo;            /*!< 描述信息 在没有上传成功时被赋值*/
+    std::u16string                     sDescriptionInfo;            /*!< 描述信息 在没有上传成功时被赋值*/
     std::chrono::steady_clock::time_point enqueueTime;              /*!< 入队时间戳（用于队列延迟统计）*/
 
 }Lusp_SyncUploadFileInfo,* PLusp_SyncUploadFileInfo;
@@ -97,7 +97,8 @@ typedef struct  Lusp_SyncUploadFileInfo {
 class Lusp_SyncUploadFileInfoHandler {
 public:
     Lusp_SyncUploadFileInfoHandler() = delete;
-    explicit Lusp_SyncUploadFileInfoHandler(const std::string& filePath);
+    //explicit Lusp_SyncUploadFileInfoHandler(const std::string& filePath);
+    explicit Lusp_SyncUploadFileInfoHandler(const std::u16string& filePath);
     virtual ~Lusp_SyncUploadFileInfoHandler();
 
     bool isValid() const { return m_valid; }
@@ -111,32 +112,46 @@ public:
     bool calculateFileMd5ValueInfo();
     void setCurrentTimestampMs();
     std::string getId() const { return m_id; }
-    std::string getFilePath() const { return m_fileInfo.sFileFullNameValue; }
-    std::string getFileName() const { return m_fileInfo.sOnlyFileNameValue; }
-    size_t getFileSize() const { return m_fileInfo.sSyncFileSizeValue; }
+    std::string getFilePath() const { return LUSP_UNICONV->ToLocaleFromUtf16LE(m_fileInfo.sFileFullNameValue); }
+    std::string getFileName() const { return LUSP_UNICONV->ToLocaleFromUtf16LE(m_fileInfo.sOnlyFileNameValue); }
     std::string getMd5Hash() const { return m_fileInfo.sFileMd5ValueInfo; }
-    std::string getClientDevice() const { return m_fileInfo.sLanClientDevice; }
+    std::string getClientDevice() const { return LUSP_UNICONV->ToLocaleFromUtf16LE(m_fileInfo.sLanClientDevice); }
     uint64_t getUploadTimeStamp() const { return m_fileInfo.uUploadTimeStamp; }
-    std::string getDescription() const { return m_fileInfo.sDescriptionInfo; }
+    std::string getDescription() const { return LUSP_UNICONV->ToLocaleFromUtf16LE(m_fileInfo.sDescriptionInfo); }
     const Lusp_SyncUploadFileInfo& getFileInfoStruct() const { return m_fileInfo; }
+    std::string getComputerName();
+    std::u16string getComputerNameU16();
+    std::string getCurrentTimeString() const;
+    size_t      getFileSize() const {return m_fileInfo.sSyncFileSizeValue;}
 
+    // 新增u16string重载
+    std::u16string getFilePathU16() const { return m_fileInfo.sFileFullNameValue; }
+    std::u16string getFileNameU16() const { return m_fileInfo.sOnlyFileNameValue; }
+    std::u16string getClientDeviceU16() const { return m_fileInfo.sLanClientDevice; }
+    std::u16string getDescriptionU16() const { return m_fileInfo.sDescriptionInfo; }
+    std::u16string getFileTypeTextU16() const ;
 private:
     void updateFileInfoFromFileSystem();
     void setId(const std::string& id) { m_id = id; }
     void setFileInfoPath(const std::string& filePath);
-    void setFileName(const std::string& name) { m_fileInfo.sOnlyFileNameValue = name; }
+    void setFileName(const std::string& name) { m_fileInfo.sOnlyFileNameValue = LUSP_UNICONV->ToUtf16LEFromUtf8(name); }
     void setFileSize(size_t size) { m_fileInfo.sSyncFileSizeValue = size; }
     void setMd5Hash(const std::string& md5) { m_fileInfo.sFileMd5ValueInfo = md5; }
-    void setClientDevice(const std::string& device) { m_fileInfo.sLanClientDevice = device; }
+    void setClientDevice(const std::string& device) { m_fileInfo.sLanClientDevice = LUSP_UNICONV->ToUtf16LEFromUtf8(device); }
     void setUploadTimeStamp(uint64_t timestamp) { m_fileInfo.uUploadTimeStamp = timestamp; }
-    void setDescription(const std::string& desc) { m_fileInfo.sDescriptionInfo = desc; }
+    void setDescription(const std::string& desc) { m_fileInfo.sDescriptionInfo = LUSP_UNICONV->ToUtf16LEFromUtf8(desc); }
     void setRecordTime(const std::string& recordTime) { m_fileInfo.sFileRecordTimeValue = recordTime; }
     void setFileExistPolicy(Lusp_FileExistPolicy policy) { m_fileInfo.eFileExistPolicy = policy; }
-   
+
+    // 新增u16string重载
+    void setFileName(const std::u16string& name);
+    void setClientDevice(const std::u16string& device);
+    void setDescription(const std::u16string& desc);
+    void setFileInfoPath(const std::u16string& filePath); // 只声明不实现
+
     std::string generateUuidWindows();
     void initializeDefaults();
-    std::string getComputerName();
-    std::string getCurrentTimeString() const;
+
     Lusp_UploadFileTyped detectFileType(const std::string& filePath) const;
 
     Lusp_SyncUploadFileInfo     m_fileInfo;
@@ -144,6 +159,7 @@ private:
     uint64_t                    m_uploadedBytesCount;
     bool                        m_valid = false;
     std::string                 m_error;
+
 };
 
 

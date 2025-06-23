@@ -30,17 +30,16 @@ void LightLogWrite_Impl::SetLogsFileName(const std::wstring& sFilename)
 	pLogFileStream.open(sFilename, std::ios::app);
 }
 
+// todo: repair this function
 void LightLogWrite_Impl::SetLogsFileName(const std::string& sFilename)
 {
-	std::wstring wFilename = UniConv::GetInstance()->LocaleToWideString(sFilename);
-
-	SetLogsFileName(wFilename);
+	SetLogsFileName(UniConv::GetInstance()->LocaleConvertToUcs4(sFilename));
 }
 
 void LightLogWrite_Impl::SetLogsFileName(const std::u16string& sFilename)
 {
-	std::wstring wFilename = UniConv::GetInstance()->U16StringToWString(sFilename);
-	SetLogsFileName(wFilename);
+	// Only Support on windows
+	SetLogsFileName(std::wstring(sFilename.begin(),sFilename.end()));
 }
 
 void LightLogWrite_Impl::SetLastingsLogs(const std::wstring& sFilePath, const std::wstring& sBaseName)
@@ -53,12 +52,12 @@ void LightLogWrite_Impl::SetLastingsLogs(const std::wstring& sFilePath, const st
 
 void LightLogWrite_Impl::SetLastingsLogs(const std::u16string& sFilePath, const std::u16string& sBaseName)
 {
-	SetLastingsLogs(UniConv::GetInstance()->U16StringToWString(sFilePath), UniConv::GetInstance()->U16StringToWString(sBaseName));
+	SetLastingsLogs(std::wstring(sFilePath.begin(),sFilePath.end()), std::wstring(sBaseName.begin(), sBaseName.end()));
 }
 
 void LightLogWrite_Impl::SetLastingsLogs(const std::string& sFilePath, const std::string& sBaseName)
 {
-	SetLastingsLogs(UniConv::GetInstance()->LocaleToWideString(sFilePath), UniConv::GetInstance()->LocaleToWideString(sBaseName));
+	SetLastingsLogs(UniConv::GetInstance()->LocaleConvertToUcs4(sFilePath), UniConv::GetInstance()->LocaleConvertToUcs4(sBaseName));
 }
 
 void LightLogWrite_Impl::WriteLogContent(const std::wstring& sTypeVal, const std::wstring& sMessage)
@@ -105,16 +104,16 @@ void LightLogWrite_Impl::WriteLogContent(const std::wstring& sTypeVal, const std
 	}
 }
 
+//todo: repair this problem
 void LightLogWrite_Impl::WriteLogContent(const std::string& sTypeVal, const std::string& sMessage)
 {
-    std::wstring wContent = UniConv::GetInstance()->LocaleToWideString(sMessage);
-    std::wcout << L"[WriteLogContent] " << wContent << std::endl;
-	WriteLogContent(UniConv::GetInstance()->LocaleToWideString(sTypeVal), UniConv::GetInstance()->LocaleToWideString(sMessage));
+    std::wstring wContent = UniConv::GetInstance()->LocaleConvertToUcs4(sMessage);
+	WriteLogContent(UniConv::GetInstance()->LocaleConvertToUcs4(sTypeVal), UniConv::GetInstance()->LocaleConvertToUcs4(sMessage));
 }
 
 void LightLogWrite_Impl::WriteLogContent(const std::u16string& sTypeVal, const std::u16string& sMessage)
 {
-	WriteLogContent(UniConv::GetInstance()->U16StringToWString(sTypeVal), UniConv::GetInstance()->U16StringToWString(sMessage));
+	WriteLogContent(std::wstring(sTypeVal.begin(),sTypeVal.end()), std::wstring(sMessage.begin(),sMessage.end()));
 }
 
 size_t LightLogWrite_Impl::GetDiscardCount() const

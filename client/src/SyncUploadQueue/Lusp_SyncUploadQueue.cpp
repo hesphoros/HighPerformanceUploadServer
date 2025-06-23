@@ -28,10 +28,10 @@ Lusp_SyncUploadQueue::Lusp_SyncUploadQueue() : d(std::make_unique<Lusp_SyncUploa
 Lusp_SyncUploadQueue::~Lusp_SyncUploadQueue() {
     std::cout << "Lusp_SyncUploadQueue: Global instance destroyed" << std::endl;
 }
-void Lusp_SyncUploadQueue::push(const std::string& filePath) {
+void Lusp_SyncUploadQueue::push(const std::u16string& filePath) {
     d->pushFile(filePath);
 }
-void Lusp_SyncUploadQueue::push(const std::vector<std::string>& filePaths) {
+void Lusp_SyncUploadQueue::push(const std::vector<std::u16string>& filePaths) {
     d->pushFiles(filePaths);
 }
 void Lusp_SyncUploadQueue::push(const Lusp_SyncUploadFileInfo& fileInfo) {

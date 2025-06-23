@@ -6,6 +6,7 @@
  */
 #include "NotificationService/Lusp_SyncFilesNotificationService.h"
 #include <iostream>
+#include "log/UniConv.h"
 
 /**
  * @brief 构造函数，初始化队列指针和统计变量。
@@ -93,7 +94,7 @@ void Lusp_SyncFilesNotificationService::notificationLoop() {
             if (socketSendFunc) {
                 socketSendFunc(fileInfo);
             } else {
-                std::cout << "[NotificationService] 通过socket发送: " << fileInfo.sFileFullNameValue << std::endl;
+                std::cout << "[NotificationService] 通过socket发送: " << UniConv::GetInstance()->ToLocaleFromUtf16LE( fileInfo.sFileFullNameValue )<< std::endl;
             }
         }
     }

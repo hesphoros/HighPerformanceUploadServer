@@ -32,12 +32,12 @@ public:
      * @brief 入队单个文件路径
      * @param filePath 文件全路径
      */
-    void pushFile(const std::string& filePath);
+    void pushFile(const std::u16string& filePath);
     /**
      * @brief 批量入队多个文件路径
      * @param filePaths 文件路径列表
      */
-    void pushFiles(const std::vector<std::string>& filePaths);
+    void pushFiles(const std::vector<std::u16string>& filePaths);
     /**
      * @brief 入队文件信息对象
      * @param handler 文件信息处理句柄
@@ -60,11 +60,13 @@ public:
      * @brief 进度回调函数
      */
     std::function<void(const std::string&, int, const std::string&)> progressCallback;
+    std::function<void(const std::u16string&,int,const std::u16string&)> progressCallbackU16;
     /**
      * @brief 
      * 
      */
-    std::function<void(const std::string&, bool, const std::string&)> completedCallback;
+    std::function<void(const std::string&, bool, const std::string&)>       completedCallback;
+    std::function<void(const std::u16string&, bool, const std::u16string&)> completedCallbackU16;
     /**
      * @brief 是否自动开始上传
      */

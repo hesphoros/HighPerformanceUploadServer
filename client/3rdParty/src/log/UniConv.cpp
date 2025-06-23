@@ -652,7 +652,7 @@ std::string UniConv::LocaleToNarrowString(const wchar_t* sInput)
 }
 
 // UTF-16LE -> Local
-std::string UniConv::ToLocalFromUtf16LE(const std::u16string& input) {
+std::string UniConv::ToLocaleFromUtf16LE(const std::u16string& input) {
     if (input.empty()) return "";
     
     std::string currentEncoding = this->GetCurrentSystemEncoding();
@@ -661,9 +661,9 @@ std::string UniConv::ToLocalFromUtf16LE(const std::u16string& input) {
     return result.IsSuccess() ? result.conv_result_str : "";
 }
 
-std::string UniConv::ToLocalFromUtf16LE(const char16_t* input) {
+std::string UniConv::ToLocaleFromUtf16LE(const char16_t* input) {
     if (!input) return "";
-    return this->ToLocalFromUtf16LE(std::u16string(input));
+    return this->ToLocaleFromUtf16LE(std::u16string(input));
 }
 
 // ===================== Helper Functions =====================
@@ -841,6 +841,96 @@ std::wstring UniConv::U16StringToWString(const char16_t* u16str)
 	return U16StringToWString(std::u16string(u16str));
 }
 
+// ===================== Locale Conversion Ucs4 =====================
+std::wstring UniConv::LocaleConvertToUcs4(const std::string& sInput)
+{
+	if (sInput.empty()) return L"";
+	std::string sLocaleCode = this->GetCurrentSystemEncoding();
+    if (sLocaleCode.empty()) {
+        return L""; // If the locale code is empty, return an empty string
+	}
+    auto result =
+#if defined(_WIN32) || defined(_WIN64)
+	 this->ConvertEncoding(sInput, sLocaleCode.c_str(), ToString(Encoding::utf_16le).c_str());
+#else 
+	 this->ConvertEncoding(sInput, sLocaleCode.c_str(), ToString(Encoding::utf_32le).c_str());
+#endif
+    if (result.IsSuccess() && result.conv_result_str.size() % sizeof(wchar_t) == 0) {
+        return std::wstring(reinterpret_cast<const wchar_t*>(result.conv_result_str.data()), 
+                            result.conv_result_str.size() / sizeof(wchar_t));
+    }
+	return std::wstring{};
+}
+
+
+
+
+std::wstring UniConv::LocaleConvertToUcs4(const char* sInput)
+{
+    if (!sInput) return std::wstring{};
+    return LocaleConvertToUcs4(std::string(sInput));
+}
+
+
+// ===================== Ucs4 Conversion to Locale =====================
+std::string UniConv::Ucs4ConvertToLocale(const std::wstring& sInput)
+{
+	if (sInput.empty()) return std::string{};
+    std::string sLocaleCode = this->GetCurrentSystemEncoding();
+    if (sLocaleCode.empty()) {
+        return this->Ucs4ConvertToUtf8(sInput); // If the locale code is empty, return an empty string
+    }
+	auto result = 
+#if defined(_WIN32) || defined(_WIN64)
+        this->ConvertEncoding(std::string(reinterpret_cast<const char*>(sInput.data()), sInput.size() * sizeof(wchar_t)),
+			ToString(Encoding::utf_16le).c_str(), sLocaleCode.c_str());
+#else
+        this->ConvertEncoding(std::string(reinterpret_cast<const char*>(sInput.data()), sInput.size() * sizeof(wchar_t)),
+			ToString(Encoding::utf_32le).c_str(), sLocaleCode.c_str());
+#endif 
+    if (result.IsSuccess())
+		return result.conv_result_str;
+	return std::string{};
+}
+
+std::string UniConv::Ucs4ConvertToLocale(const wchar_t* sInput)
+{
+    if (!sInput) return std::string{};
+    return Ucs4ConvertToLocale(std::wstring(sInput));
+}
+
+
+std::string UniConv::Utf8ConvertLocale(const std::string& sInput)
+{
+   if (sInput.empty()) return std::string{};
+   auto result = this->ConvertEncoding(sInput, ToString(Encoding::utf_8).c_str(), this->GetCurrentSystemEncoding().c_str());
+   if (result.IsSuccess())
+	   return result.conv_result_str;
+   return std::string{};
+}
+
+std::string UniConv::Utf8ConvertLocale(const char* sInput)
+{
+    if (!sInput) return std::string{};
+    return Utf8ConvertLocale(std::string(sInput));
+}
+
+std::string UniConv::LocaleConvertUtf8(const std::string& sInput)
+{
+	if (sInput.empty()) return std::string{};
+    auto result = this->ConvertEncoding(sInput, this->GetCurrentSystemEncoding().c_str(), ToString(Encoding::utf_8).c_str());
+    if (result.IsSuccess())
+        return result.conv_result_str;
+	return std::string{};
+}
+
+std::string UniConv::LocaleConvertUtf8(const char* sInput)
+{
+    if (!sInput) return std::string{};
+    return LocaleConvertUtf8(std::string(sInput));
+}
+
+
 // ===================== Error Handling Related =====================
 std::string UniConv::GetIconvErrorString(int err_code) {
     auto it = m_iconvErrorMap.find(err_code);
@@ -850,6 +940,8 @@ std::string UniConv::GetIconvErrorString(int err_code) {
     // If the error code is not found in the map, return a generic error message
 	return std::string(std::generic_category().message(err_code));
 }
+
+
 
 
 UniConv::IconvSharedPtr UniConv::GetIconvDescriptor(const char* fromcode, const char* tocode)
@@ -948,3 +1040,6 @@ std::string UniConv::ToString(UniConv::Encoding  enc) {
         return m_encodingNames[idx];
     return {};
 }
+
+
+

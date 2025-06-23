@@ -1,7 +1,10 @@
 #include "FileInfo/FileInfo.h"
 #include "log_headers.h"
+#include "log/UniConv.h"
+#include <codecvt>
 
 #pragma comment(lib, "rpcrt4.lib")
+
 
 
 std::string Lusp_SyncUploadFileInfoHandler::getComputerName()
@@ -15,18 +18,29 @@ std::string Lusp_SyncUploadFileInfoHandler::getComputerName()
     }
 }
 
+std::u16string Lusp_SyncUploadFileInfoHandler::getComputerNameU16()
+{
+    char computerName[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD size = sizeof(computerName);
+    if (GetComputerNameA(computerName, &size)) {
+        return UniConv::GetInstance()->ToUtf16LEFromLocale(computerName);
+    } else {
+        return u"Unknown-ComputerName"; // 获取计算机失败返回默认值
+    }
+}
+
 
 
 void Lusp_SyncUploadFileInfoHandler::initializeDefaults()
 {
-    m_id = generateUuidWindows(); // 生成唯一ID
+    m_id = generateUuidWindows();
     m_fileInfo.eUploadFileTyped = Lusp_UploadFileTyped::LUSP_UPLOADTYPE_UNDEFINED;
-    m_fileInfo.sLanClientDevice = this->getComputerName();
+    m_fileInfo.sLanClientDevice = this->getComputerNameU16();
     m_fileInfo.sSyncFileSizeValue = 0;
-    m_fileInfo.eFileExistPolicy = Lusp_FileExistPolicy::LUSP_FILE_EXIST_POLICY_OVERWRITE; // 默认覆盖策略
-    m_fileInfo.uUploadTimeStamp = 0; // 初始时间戳为0
+    m_fileInfo.eFileExistPolicy = Lusp_FileExistPolicy::LUSP_FILE_EXIST_POLICY_OVERWRITE;
+    m_fileInfo.uUploadTimeStamp = 0;
     m_fileInfo.eUploadStatusInf = Lusp_UploadStatusInf::LUSP_UPLOAD_STATUS_IDENTIFIERS_PENDING;
-    m_fileInfo.sFileRecordTimeValue = {}; // 初始记录时间为空
+    m_fileInfo.sFileRecordTimeValue = {};
 }
 
 
@@ -45,17 +59,23 @@ std::string Lusp_SyncUploadFileInfoHandler::getCurrentTimeString() const
     return oss.str();
 }
 
-void Lusp_SyncUploadFileInfoHandler::setFileInfoPath(const std::string &filePath)
+void Lusp_SyncUploadFileInfoHandler::setFileInfoPath(const std::u16string &filePathU16)
 {
-    // 使用 std::filesystem 处理路径，自动适配分隔符，无需手动替换
-    std::filesystem::path fsPath = std::filesystem::u8path(filePath);
-    m_fileInfo.sFileFullNameValue = fsPath.u8string(); // 保持原始格式
-    m_fileInfo.sOnlyFileNameValue = fsPath.filename().u8string(); // 获取文件名
+    //std::string filePathUtf8 = UniConv::GetInstance()->ToUtf8FromUtf16LE(filePathU16);
+    std::string filePathUtf8 = UniConv::GetInstance()->ToLocaleFromUtf16LE(filePathU16);
+    std::filesystem::path fsPath = std::filesystem::u8path(filePathUtf8);
+    m_fileInfo.sFileFullNameValue = filePathU16;
+    m_fileInfo.sOnlyFileNameValue = UniConv::GetInstance()->ToUtf16LEFromLocale(fsPath.filename().u8string());
     g_luspLogWriteImpl.WriteLogContent(
         LOG_DEBUG,
-        "设置文件路径: " + m_fileInfo.sFileFullNameValue + " (文件名: " + m_fileInfo.sOnlyFileNameValue + ")"
+        "设置文件路径: " + filePathUtf8 + " (文件名: " + fsPath.filename().u8string() + ")"
     );
-    m_fileInfo.eUploadFileTyped = this->detectFileType(m_fileInfo.sFileFullNameValue); // 检测文件类型
+    m_fileInfo.eUploadFileTyped = this->detectFileType(filePathUtf8);
+}
+
+void Lusp_SyncUploadFileInfoHandler::setFileInfoPath(const std::string &filePath)
+{
+    setFileInfoPath(UniConv::GetInstance()->ToUtf16LEFromLocale(filePath));
 }
 
 Lusp_UploadFileTyped Lusp_SyncUploadFileInfoHandler::detectFileType(const std::string &filePath) const
@@ -119,34 +139,47 @@ Lusp_UploadFileTyped Lusp_SyncUploadFileInfoHandler::detectFileType(const std::s
 
 void Lusp_SyncUploadFileInfoHandler::updateFileInfoFromFileSystem()
 {
-    const std::string &filePath = this->getFilePath();
+    // 使用 UniConv 进行编码转换，确保路径为本地编码
+    std::string filePath = UniConv::GetInstance()->ToLocaleFromUtf16LE(m_fileInfo.sFileFullNameValue);
     if (filePath.empty()) {
         g_luspLogWriteImpl.WriteLogContent(LOG_ERROR, "文件路径为空，无法更新文件信息");
         m_valid = false;
         m_error = "文件路径为空，无法更新文件信息";
         return;
     }
-    std::filesystem::path path(filePath);
+    std::filesystem::path path = std::filesystem::u8path(UniConv::GetInstance()->ToUtf8FromLocale(filePath));
     if (!std::filesystem::exists(path)) {
         g_luspLogWriteImpl.WriteLogContent(LOG_ERROR, "文件不存在: " + filePath);
         m_valid = false;
         m_error = "文件不存在: " + filePath;
-        return; // 文件不存在，无法更新信息
+        return;
     }
     setFileSize(std::filesystem::file_size(path));
-    // 更新文件名（获取最后一个路径组件）（可能路径中的文件名与实际文件名不同）
-    setFileName(path.filename().string());
-    // 更新记录时间
-    setRecordTime(getCurrentTimeString()); // 使用当前时间作为记录时间
+    // setFileName(utf8_to_u16(path.filename().u8string()));
+    setFileName(UniConv::GetInstance()->ToUtf16LEFromLocale(path.filename().u8string()));
+    setRecordTime(getCurrentTimeString());
     if(getMd5Hash().empty()) {
-       // 计算md5
-         if (!calculateFileMd5ValueInfo()) {
-              g_luspLogWriteImpl.WriteLogContent(LOG_ERROR, "计算MD5值失败: " + filePath);
-         }
+        if (!calculateFileMd5ValueInfo()) {
+            g_luspLogWriteImpl.WriteLogContent(LOG_ERROR, "计算MD5值失败: " + filePath);
+        }
     }
 }
 
-Lusp_SyncUploadFileInfoHandler::Lusp_SyncUploadFileInfoHandler(const std::string &filePath)
+//Lusp_SyncUploadFileInfoHandler::Lusp_SyncUploadFileInfoHandler(const std::string &filePath)
+//    : m_uploadedBytesCount(0), m_valid(false)
+//{
+//    initializeDefaults();
+//    if (filePath.empty() || !std::filesystem::exists(filePath)) {
+//        m_error = "文件路径无效或文件不存在";
+//        return;
+//    }
+//    this->setFileInfoPath(filePath);
+//    m_fileInfo.eUploadFileTyped = this->detectFileType(filePath);
+//    updateFileInfoFromFileSystem();
+//    m_valid = true;
+//}
+
+Lusp_SyncUploadFileInfoHandler::Lusp_SyncUploadFileInfoHandler(const std::u16string &filePath)
     : m_uploadedBytesCount(0), m_valid(false)
 {
     initializeDefaults();
@@ -155,11 +188,11 @@ Lusp_SyncUploadFileInfoHandler::Lusp_SyncUploadFileInfoHandler(const std::string
         return;
     }
     this->setFileInfoPath(filePath);
-    m_fileInfo.eUploadFileTyped = this->detectFileType(filePath);
+    m_fileInfo.eUploadFileTyped = this->detectFileType(UniConv::GetInstance()->ToUtf8FromUtf16LE(filePath));
     updateFileInfoFromFileSystem();
-    // 可扩展更多字段校验
     m_valid = true;
 }
+
 
 std::string Lusp_SyncUploadFileInfoHandler::getFormatUploadTimestamp() const
 {
@@ -197,24 +230,23 @@ bool Lusp_SyncUploadFileInfoHandler::calculateFileMd5ValueInfo()
         g_luspLogWriteImpl.WriteLogContent(LOG_ERROR, "文件路径为空,无法计算MD5值");
         return false;
     }
-    std::ifstream file(m_fileInfo.sFileFullNameValue, std::ios::binary);
+    // 直接用 std::filesystem::path 支持 utf16/中文路径
+    std::filesystem::path fsPath(m_fileInfo.sFileFullNameValue);
+    std::ifstream file(fsPath, std::ios::binary);
     if (!file.is_open()) {
-        g_luspLogWriteImpl.WriteLogContent(LOG_ERROR, "无法打开文件: " + m_fileInfo.sFileFullNameValue);
+        g_luspLogWriteImpl.WriteLogContent(LOG_ERROR, "无法打开文件: " + fsPath.u8string());
         return false;
     }
-
-    std::vector<char> buffer(8192); // 修正为char类型，兼容ifstream::read
+    std::vector<char> buffer(8192);
     MD5 md5;
-
     while (file.read(buffer.data(), buffer.size()) || file.gcount() > 0) {
         md5.add(buffer.data(), file.gcount());
     }
-
     file.close();
     this->setMd5Hash(md5.getHash());
     g_luspLogWriteImpl.WriteLogContent(
         LOG_DEBUG,
-        "计算文件MD5值完成: " + m_fileInfo.sFileFullNameValue + " MD5: " + m_fileInfo.sFileMd5ValueInfo
+        "计算文件MD5值完成: " + fsPath.u8string() + " MD5: " + m_fileInfo.sFileMd5ValueInfo
     );
     return true;
 }
@@ -258,6 +290,28 @@ std::string Lusp_SyncUploadFileInfoHandler::getFileTypeText() const
     }
 }
 
+
+std::u16string Lusp_SyncUploadFileInfoHandler::getFileTypeTextU16() const
+{
+    switch (m_fileInfo.eUploadFileTyped) {
+    case Lusp_UploadFileTyped::LUSP_UPLOADTYPE_DOCUMENT:
+        return u"DOCUMENT";
+    case Lusp_UploadFileTyped::LUSP_UPLOADTYPE_IMAGE:
+        return u"IMAGE";
+    case Lusp_UploadFileTyped::LUSP_UPLOADTYPE_VIDEO:
+        return u"VIDEO";
+    case Lusp_UploadFileTyped::LUSP_UPLOADTYPE_AUDIO:
+        return u"AUDIO";
+    case Lusp_UploadFileTyped::LUSP_UPLOADTYPE_ARCHIVE:
+        return u"ARCHIVE";
+    case Lusp_UploadFileTyped::LUSP_UPLOADTYPE_CODE:
+        return u"CODE";
+    default:
+        return u"UNDEFINED";
+    }
+}
+
+
 std::string Lusp_SyncUploadFileInfoHandler::getFileExistPolicyText() const
 {
     switch (m_fileInfo.eFileExistPolicy) {
@@ -279,4 +333,19 @@ int Lusp_SyncUploadFileInfoHandler::getProgressPercentage() const
         return 0; // 文件大小为0，进度为0%
     }
     return static_cast<int>((static_cast<double>(m_uploadedBytesCount) / m_fileInfo.sSyncFileSizeValue) * 100);
+}
+
+void Lusp_SyncUploadFileInfoHandler::setFileName(const std::u16string& name)
+{
+    m_fileInfo.sOnlyFileNameValue = name;
+}
+
+void Lusp_SyncUploadFileInfoHandler::setClientDevice(const std::u16string& device)
+{
+    m_fileInfo.sLanClientDevice = device;
+}
+
+void Lusp_SyncUploadFileInfoHandler::setDescription(const std::u16string& desc)
+{
+    m_fileInfo.sDescriptionInfo = desc;
 }

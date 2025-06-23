@@ -117,7 +117,7 @@ void FileListWidget::addFiles(const QStringList& filePaths) {
         }
         
         if (!exists) {
-            Lusp_SyncUploadFileInfoHandler infoHandler(filePath.toStdString());
+            Lusp_SyncUploadFileInfoHandler infoHandler(filePath.toStdU16String());
             FileInfoQtAdapter infoAdapter(infoHandler);
             
             // 创建列表项

@@ -562,6 +562,25 @@ public:
 	 * @retval val std::string
 	 */
 	std::string          LocaleToNarrowString(const wchar_t* sInput);
+/** New API */
+/***************************************************************************/
+/*======================== wstring <->  striing ==========================*/
+/***************************************************************************/
+	std::wstring         LocaleConvertToUcs4(const std::string& sInput);
+	std::wstring         LocaleConvertToUcs4(const char* sInput);
+
+	std::string          Ucs4ConvertToLocale(const std::wstring& sInput);
+	std::string          Ucs4ConvertToLocale(const wchar_t* sInput);
+
+	std::string          Utf8ConvertLocale(const std::string& sInput);
+	std::string          Utf8ConvertLocale(const char* sInput);
+	std::string          LocaleConvertUtf8(const std::string& sInput);
+	std::string          LocaleConvertUtf8(const char* sInput);
+
+	
+
+	//std::string          Utf8ConvertToUcs4(const std::wstring & sInput);
+
 
 /** Test Suceess */
 /***************************************************************************/
@@ -572,14 +591,14 @@ public:
 	 * @param input UTF-16LE string to convert.
 	 * @return Converted string in local encoding.
 	 */
-	std::string ToLocalFromUtf16LE(const std::u16string& input);
+    std::string ToLocaleFromUtf16LE(const std::u16string& input);
 
 	/**
 	 * @brief Convert UTF-16LE C-style string to local encoding.
 	 * @param input UTF-16LE C-style string to convert.
 	 * @return Converted string in local encoding.
 	 */
-	std::string ToLocalFromUtf16LE(const char16_t* input);
+    std::string ToLocaleFromUtf16LE(const char16_t* input);
 
 /***************************************************************************/
 /*======================= Wide String Helpers ===========================*/
@@ -741,6 +760,9 @@ private:
 public:
 
 };
+
+
+// #define LUSP_UNICONV:: UniConv::GetInstance()->
 
 #endif // UNICONV_H__
 
