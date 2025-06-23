@@ -2,7 +2,8 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
-
+#include "upload_file_info_generated.h"
+#include "flatbuffers/flatbuffers.h"
 
 // ---- Server ----
 Lusp_AsioLoopbackIpcServer::Lusp_AsioLoopbackIpcServer(asio::io_context& io_context, const Lusp_AsioIpcConfig& config)
@@ -33,9 +34,21 @@ void Lusp_AsioLoopbackIpcServer::do_read(std::shared_ptr<asio::ip::tcp::socket> 
     auto buffer = std::make_shared<std::vector<char>>(config_.buffer_size);
     socket->async_read_some(asio::buffer(*buffer), [this, socket, buffer](std::error_code ec, std::size_t len) {
         if (!ec && on_message_) {
-            std::string raw(buffer->data(), len);
-            std::string msg = (raw);
-            on_message_(msg, socket);
+            // å°è¯•è§£æ FlatBuffers æ¶ˆæ¯
+            const void* data = buffer->data();
+            size_t size = len;
+            flatbuffers::Verifier verifier(reinterpret_cast<const uint8_t*>(data), size);
+            if (UploadClient::Sync::VerifyFBS_SyncUploadFileInfoBuffer(verifier)) {
+                auto fb_msg = UploadClient::Sync::GetFBS_SyncUploadFileInfo(data);
+                auto native_msg = fb_msg->UnPack();
+                // è¿™é‡Œå¯ä»¥è‡ªå®šä¹‰å¤„ç†native_msgï¼Œä¾‹å¦‚æ‰“å°æˆ–å›è°ƒ
+                std::cout << "[FlatBuffer] file_name: " << native_msg->s_file_full_name_value << std::endl;
+                // ä½ å¯ä»¥æ‰©å±•on_message_ä¸ºå¤šæ€å›è°ƒï¼Œæˆ–åœ¨æ­¤å¤„å¤„ç†FlatBufferæ¶ˆæ¯
+            } else {
+                // é FlatBuffers æ¶ˆæ¯ï¼Œèµ°åŸæœ‰å­—ç¬¦ä¸²å›è°ƒ
+                std::string raw(buffer->data(), len);
+                on_message_(raw, socket);
+            }
             do_read(socket);
         } else {
             std::lock_guard<std::mutex> lock(clients_mutex_);
@@ -51,11 +64,11 @@ void Lusp_AsioLoopbackIpcServer::broadcast(const std::string& message) {
     std::lock_guard<std::mutex> lock(clients_mutex_);
     for (auto& client : clients_) {
         if (client && client->is_open()) {
-            // ÓÃ shared_ptr ¹ÜÀí buffer ÉúÃüÖÜÆÚ
+          
             auto data = std::make_shared<std::string>(message);
             asio::async_write(*client, asio::buffer(*data),
                 [data](std::error_code, std::size_t) {
-                    // data ÉúÃüÖÜÆÚ×Ô¶¯ÑÓ³¤µ½»Øµ÷½áÊø
+                 
                 });
         }
     }

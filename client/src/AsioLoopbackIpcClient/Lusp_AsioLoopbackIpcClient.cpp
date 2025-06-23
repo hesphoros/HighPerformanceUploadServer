@@ -34,6 +34,8 @@ void Lusp_AsioLoopbackIpcClient::send(const std::string& message)
         asio::async_write(*socket_, asio::buffer(*data),
             [data](std::error_code, std::size_t) {
                 // 可选：写入完成后日志
+                std::string msg = "[IPC] Send message  ";
+				g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_DEBUG, msg);
             });
     } else {
         g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_ERROR, "[IPC] Socket not connected, send failed.");

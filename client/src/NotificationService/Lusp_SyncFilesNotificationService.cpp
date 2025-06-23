@@ -135,7 +135,7 @@ void Lusp_SyncFilesNotificationService::notificationLoop() {
                 socketSendFunc(fileInfo);
             }
            
-            std::cout << "[NotificationService] socket send : " << LUSP_UNICONV->ToLocaleFromUtf16LE(fileInfo.sFileFullNameValue  )<< std::endl;
+            std::wcout << L"[NotificationService] socket send : " << std::wstring(fileInfo.sFileFullNameValue.begin(),fileInfo.sFileFullNameValue.end() )<< std::endl;
             g_LogSyncNotificationService.WriteLogContent(
                 LOG_INFO, 
                 "通过socket发送: " + UniConv::GetInstance()->ToLocaleFromUtf16LE(fileInfo.sFileFullNameValue)
