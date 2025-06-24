@@ -11,6 +11,7 @@
 #include "FileInfo/FileInfo.h"
 #include "SyncUploadQueue/Lusp_SyncUploadQueue.h"
 #include "AsioLoopbackIpcClient/Lusp_AsioLoopbackIpcClient.h"
+#include "upload_file_info_generated.h"
 
 /**
  * @class Lusp_SyncFilesNotificationService
@@ -107,6 +108,13 @@ private:
     
     std::string ToFlatBuffer(const Lusp_SyncUploadFileInfo& info);
     static const Lusp_AsioIpcConfig kDefaultIpcConfig;
+    /**
+     * @brief 反序列化FlatBuffers字节流为Lusp_SyncUploadFileInfo结构体。
+     * @param buf FlatBuffers二进制数据
+     * @param size 数据长度
+     * @return 解析得到的Lusp_SyncUploadFileInfo对象
+     */
+    static Lusp_SyncUploadFileInfo FromFlatBuffer(const uint8_t* buf, size_t size);
 };
 
 

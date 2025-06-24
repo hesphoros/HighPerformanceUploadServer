@@ -189,3 +189,27 @@ std::string Lusp_SyncFilesNotificationService::ToFlatBuffer(const Lusp_SyncUploa
     builder.Finish(fb);
     return std::string(reinterpret_cast<const char*>(builder.GetBufferPointer()), builder.GetSize());
 }
+
+Lusp_SyncUploadFileInfo Lusp_SyncFilesNotificationService::FromFlatBuffer(const uint8_t* buf, size_t size) {
+    using namespace UploadClient::Sync;
+    Lusp_SyncUploadFileInfo info{};
+    // 反序列化为 FlatBuffers 对象
+    auto fb = GetFBS_SyncUploadFileInfo(buf);
+    if (!fb) return info;
+    // 字段映射
+    info.eUploadFileTyped = static_cast<Lusp_UploadFileTyped>(static_cast<int>(fb->e_upload_file_typed()));
+    info.sLanClientDevice = UniConv::GetInstance()->ToUtf16LEFromLocale(fb->s_lan_client_device() ? fb->s_lan_client_device()->str() : "");
+    info.sSyncFileSizeValue = static_cast<size_t>(fb->s_sync_file_size_value());
+    info.sFileFullNameValue = UniConv::GetInstance()->ToUtf16LEFromLocale(fb->s_file_full_name_value() ? fb->s_file_full_name_value()->str() : "");
+    info.sOnlyFileNameValue = UniConv::GetInstance()->ToUtf16LEFromLocale(fb->s_only_file_name_value() ? fb->s_only_file_name_value()->str() : "");
+    info.sFileRecordTimeValue = fb->s_file_record_time_value() ? fb->s_file_record_time_value()->str() : "";
+    info.sFileMd5ValueInfo = fb->s_file_md5_value_info() ? fb->s_file_md5_value_info()->str() : "";
+    info.eFileExistPolicy = static_cast<Lusp_FileExistPolicy>(static_cast<int>(fb->e_file_exist_policy()));
+    info.sAuthTokenValues = fb->s_auth_token_values() ? fb->s_auth_token_values()->str() : "";
+    info.uUploadTimeStamp = fb->u_upload_time_stamp();
+    info.eUploadStatusInf = static_cast<Lusp_UploadStatusInf>(static_cast<int>(fb->e_upload_status_inf()));
+    info.sDescriptionInfo = UniConv::GetInstance()->ToUtf16LEFromLocale(fb->s_description_info() ? fb->s_description_info()->str() : "");
+    // FlatBuffers 里 enqueue_time_ms 是 uint64_t 毫秒
+    info.enqueueTime = std::chrono::steady_clock::time_point(std::chrono::milliseconds(fb->enqueue_time_ms()));
+    return info;
+}

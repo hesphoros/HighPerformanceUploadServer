@@ -7,4 +7,8 @@ cmake --build . --config Release
 
 
 client :
-    vcpkg install protobuf:x64-windows
+    //vcpkg install protobuf:x64-windows
+    flatbuffers
+
+目前已经完成第一层的SDK
+本地服务已经可以接收到上层发送的文件信息

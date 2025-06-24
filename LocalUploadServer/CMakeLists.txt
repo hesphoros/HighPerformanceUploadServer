@@ -1,34 +1,36 @@
+# ===================== 基础配置 =====================
 cmake_minimum_required(VERSION 3.15)
 project(LocalUploadServer)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# vcpkg/Qt路径
+# 强制源文件编码为UTF-8（适用于MSVC/VS）
+if(MSVC)
+    add_compile_options("/utf-8")
+endif()
+
+# vcpkg/Qt路径  
 set(CMAKE_PREFIX_PATH "D:/cppsoft/vcpkg/installed/x64-windows")
 set(CMAKE_TOOLCHAIN_FILE "D:/cppsoft/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
-# 查找 FlatBuffers
+# ===================== 依赖查找 =====================
 find_package(Flatbuffers CONFIG REQUIRED)
 
-# 包含3rdParty头文件
+# ===================== 头文件包含路径 =====================
 include_directories(
     ${CMAKE_SOURCE_DIR}/3rdParty/include
     ${CMAKE_SOURCE_DIR}/3rdParty/include/asio
     ${CMAKE_SOURCE_DIR}/3rdParty/include/hash-library
     ${CMAKE_SOURCE_DIR}/3rdParty/include/log
     ${CMAKE_SOURCE_DIR}/3rdParty/include/nlohmann
+    ${CMAKE_SOURCE_DIR}/3rdParty/include/tabulate
     ${CMAKE_SOURCE_DIR}/include
     $<TARGET_PROPERTY:flatbuffers::flatbuffers,INTERFACE_INCLUDE_DIRECTORIES>
-)
-
-# 包含FlatBuffers头文件
-include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffer
 )
 
-
-# ---------------- FlatBuffers 自动生成配置 ----------------
+# ===================== FlatBuffers 自动生成配置 =====================
 file(GLOB FBS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffer/*.fbs")
 set(FLATC_EXE "D:/cppsoft/vcpkg/installed/x64-windows/tools/flatbuffers/flatc.exe")
 
@@ -48,39 +50,45 @@ foreach(FBS_FILE ${FBS_FILES})
 endforeach()
 add_custom_target(FlatBuffersGen ALL DEPENDS ${GEN_HEADERS} ${GEN_SOURCES})
 
-# 收集 FlatBuffer 目录下所有 _generated.h/_generated.cpp 文件
 file(GLOB FLATBUFFERS_GENERATED_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffer/*_generated.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffer/*_generated.cpp"
 )
 
-# ---------------------------------------------------------
-
-# 查找源文件
+# ===================== 源文件与头文件收集 =====================
 file(GLOB_RECURSE SRC_FILES
     ${CMAKE_SOURCE_DIR}/src/*.cpp
     ${CMAKE_SOURCE_DIR}/src/AsioLoopbackIpcServer/*.cpp
     ${CMAKE_SOURCE_DIR}/3rdParty/src/hash-library/*.cpp
     ${CMAKE_SOURCE_DIR}/3rdParty/src/log/*.cpp
-    # ${CMAKE_SOURCE_DIR}/3rdParty/src/asio/*.cpp
 )
 
-# 添加可执行文件，并包含 FlatBuffers 生成的源文件
+file(GLOB_RECURSE PROJECT_HEADERS
+    ${CMAKE_SOURCE_DIR}/include/*.h
+    ${CMAKE_SOURCE_DIR}/include/*.hpp
+)
+
+# ===================== 可执行文件与依赖 =====================
 add_executable(LocalUploadServer
     ${SRC_FILES}
     ${FLATBUFFERS_GENERATED_SOURCES}
+    ${PROJECT_HEADERS}
 )
 
 add_dependencies(LocalUploadServer FlatBuffersGen)
 
-# 链接静态库（如有）
+# ===================== 链接库 =====================
 target_link_libraries(LocalUploadServer
-    ${CMAKE_SOURCE_DIR}/3rdParty/lib/iconv/libiconv_1_17.lib
+    $<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/lib/iconv/debug/libiconv_1_17.lib>
+    $<$<CONFIG:Release>:${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/lib/iconv/release/libiconv_1_17.lib>
     flatbuffers::flatbuffers
 )
 
+# ===================== 目标包含路径 =====================
 target_include_directories(LocalUploadServer PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/3rdParty/include
     ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffer
+    ${CMAKE_SOURCE_DIR}/3rdParty/include/tabulate
 )
+
