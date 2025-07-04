@@ -13,7 +13,6 @@ void on_flatbuffer_message(const void* data, size_t size) {
         auto fb_msg = UploadClient::Sync::GetFBS_SyncUploadFileInfo(data);
         auto native_msg = fb_msg->UnPack();
         //std::cout << "[FlatBuffer] file_name: " << native_msg->s_file_full_name_value << std::endl;
-
         tabulate::Table table;
         table.add_row({
             "ClientDevice", "UploadFileType", "SyncFileFullName", "SyncFileOnlyName",
