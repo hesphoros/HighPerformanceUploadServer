@@ -10,6 +10,7 @@ client/
 ├── build_optimized.bat     # Windows一键构建脚本
 ├── README.md               # 项目说明
 ├── client.md               # 架构设计文档
+├── CLIENT_RUNTIME_ARCHITECTURE_ANALYSIS.md  # 运行时架构深度分析
 ├── examples/               # 使用示例
 │   └── minimal_upload_example.cpp  # 极简调用示例
 ├── include/                # 头文件目录
@@ -259,6 +260,22 @@ void MainWindow::addFilesToUploadQueue(const QStringList& filePaths) {
 ```
 
 **🎉 核心优势**：UI开发者只需要知道一个接口`Upload::push()`，剩下的全部透明处理！
+
+## 📖 深入阅读
+
+### 架构文档
+- **[client.md](client.md)** - 完整的架构设计文档，包含设计理念、组件设计、工作流程
+- **[CLIENT_RUNTIME_ARCHITECTURE_ANALYSIS.md](CLIENT_RUNTIME_ARCHITECTURE_ANALYSIS.md)** - 运行时架构深度分析
+  - 程序启动与初始化流程
+  - 线程生命周期管理
+  - 数据流转与状态转换
+  - 内存管理与性能分析
+  - 调试与故障排查指南
+- **[ARCHITECTURE_COMPLIANCE_ANALYSIS.md](ARCHITECTURE_COMPLIANCE_ANALYSIS.md)** - 架构符合性验证报告
+- **[docs/](docs/)** - 分模块详细文档
+
+### 使用示例
+- **[examples/minimal_useage.md](examples/minimal_useage.md)** - 极简使用示例和集成指南
 
 ## 许可证
 
