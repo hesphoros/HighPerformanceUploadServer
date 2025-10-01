@@ -18,7 +18,7 @@
 /**
  * @class Lusp_SyncFilesNotificationService
  * @brief 负责异步监管上传队列并通过socket与本地服务通信的通知服务。
- * 
+ *
  * 该服务通过独立线程持续监控上传队列（ThreadSafeRowLockQueue），
  * 队列有内容时自动pop并通过socket回调发送到本地服务，实现UI与上传解耦。
  * 支持处理统计、延迟监控、诊断信息导出等。
@@ -42,9 +42,9 @@ public:
      */
     explicit Lusp_SyncFilesNotificationService(Lusp_SyncUploadQueue& queue);
     /**
-     * @brief 推荐构造：自动管理IPC，外部只需传队列和可选配置。
+     * @brief 推荐构造：自动管理IPC，外部只需传队列和配置管理器。
      */
-    Lusp_SyncFilesNotificationService(Lusp_SyncUploadQueue& queue, const Lusp_AsioIpcConfig& config);
+    Lusp_SyncFilesNotificationService(Lusp_SyncUploadQueue& queue, const ClientConfigManager& configMgr);
     /**
      * @brief 析构函数，自动停止监管线程。
      */
@@ -86,10 +86,6 @@ public:
      * @brief 设置IPC客户端（用于自动发送proto消息）。
      */
     void setIpcClient(std::shared_ptr<Lusp_AsioLoopbackIpcClient> ipcClient);
-    /**
-     * @brief 设置IPC配置（可选，便于构造内部IPC客户端）。
-     */
-    void setIpcConfig(const Lusp_AsioIpcConfig& config);
 private:
     /**
      * @brief 监管线程主循环，阻塞等待队列有内容时自动pop并处理。
@@ -97,19 +93,18 @@ private:
     void notificationLoop();
     Lusp_SyncUploadQueue& queueRef; // 保存队列引用
     std::thread notifyThread; ///< 监管线程
-    std::atomic<bool> shouldStop{false}; ///< 停止标志
+    std::atomic<bool> shouldStop{ false }; ///< 停止标志
     SocketSendFunc socketSendFunc; ///< socket通信回调函数
     // 性能统计
-    std::atomic<size_t> processedCount{0}; ///< 已处理任务数
-    double totalLatencyMs{0}; ///< 总处理延迟
+    std::atomic<size_t> processedCount{ 0 }; ///< 已处理任务数
+    double totalLatencyMs{ 0 }; ///< 总处理延迟
     mutable std::mutex latencyMutex; ///< 延迟统计锁
     std::shared_ptr<Lusp_AsioLoopbackIpcClient> ipcClient_;
-    Lusp_AsioIpcConfig ipcConfig_;
+    const ClientConfigManager* configMgr_;
     std::shared_ptr<asio::io_context> ioContext_;
     std::thread ioThread_;
-    
+
     std::string ToFlatBuffer(const Lusp_SyncUploadFileInfo& info);
-    static const Lusp_AsioIpcConfig kDefaultIpcConfig;
     /**
      * @brief 反序列化FlatBuffers字节流为Lusp_SyncUploadFileInfo结构体。
      * @param buf FlatBuffers二进制数据

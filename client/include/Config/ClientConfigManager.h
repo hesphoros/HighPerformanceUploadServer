@@ -77,11 +77,11 @@ DEFINE_ENUM_SUPPORT(ChecksumAlgorithm)
 
 // TOML配置节名称常量
 namespace ConfigSections {
-    const std::string UPLOAD    = "upload";
-    const std::string UI        = "ui";
-    const std::string NETWORK   = "network";
-    const std::string LOGGING   = "logging";
-    const std::string SECURITY  = "security";
+    const std::string UPLOAD = "upload";
+    const std::string UI = "ui";
+    const std::string NETWORK = "network";
+    const std::string LOGGING = "logging";
+    const std::string SECURITY = "security";
 }
 
 
@@ -99,14 +99,15 @@ namespace ConfigSections {
  */
 class ClientConfigManager {
 public:
-    /**
+
+   /**
      * @brief 上传配置结构体 - 包含所有上传相关配置
      */
     struct UploadConfig {
         // ===================== 基础网络配置 =====================
-        std::string serverHost      = "127.0.0.1";      // 服务器地址
-        uint16_t    serverPort      = 9000;             // 服务器端口
-        std::string uploadProtocol  = "TCP";            // 上传协议: HTTP/FTP/gRPC/WebSocket
+        std::string serverHost          = "127.0.0.1";      // 服务器地址
+        uint16_t    serverPort          = 9000;             // 服务器端口
+        std::string uploadProtocol      = "TCP";            // 上传协议: HTTP/FTP/gRPC/WebSocket
 
         // ===================== 上传控制 =====================
         uint32_t maxConcurrentUploads   = 4;            // 最大并发上传任务数
@@ -148,7 +149,7 @@ public:
         std::vector<std::string> excludePatterns; // 排除的文件模式 (*.tmp, *.bak)
     };
 
-    /**
+      /**
      * @brief UI配置结构体 - 用户界面相关配置
      */
     struct UIConfig {
@@ -177,20 +178,26 @@ public:
      * @brief 网络配置结构体 - 网络相关配置
      */
     struct NetworkConfig {
-        uint32_t connectTimeoutMs       = 5000;   // 连接超时时间
-        uint32_t readTimeoutMs          = 30000;  // 读取超时时间
-        uint32_t writeTimeoutMs         = 30000;  // 写入超时时间
+        uint32_t connectTimeoutMs        = 5000;   // 连接超时时间
+        uint32_t readTimeoutMs           = 30000;  // 读取超时时间
+        uint32_t writeTimeoutMs          = 30000;  // 写入超时时间
 
-        uint32_t bufferSize             = 8192;   // 网络缓冲区大小
-        uint32_t maxConnections         = 10;     // 最大连接数
-        bool     enableKeepAlive        = true;   // 启用Keep-Alive
-        uint32_t keepAliveIntervalMs    = 30000;  // Keep-Alive间隔
+        uint32_t bufferSize              = 8192;   // 网络缓冲区大小
+        uint32_t maxConnections          = 10;     // 最大连接数
+        bool     enableKeepAlive         = true;   // 启用Keep-Alive
+        uint32_t keepAliveIntervalMs     = 30000;  // Keep-Alive间隔
 
-        bool enableProxy                = false;  // 启用代理
-        std::string proxyHost           = "";     // 代理服务器地址
-        uint16_t proxyPort              = 7890;   // 代理服务器端口
-        std::string proxyUser           = "";     // 代理用户名
-        std::string proxyPassword       = "";     // 代理密码
+        bool     enableAutoReconnect     = true;   // 启用自动重连
+        uint32_t reconnectIntervalMs     = 1000;   // 重连间隔（毫秒）
+        uint32_t maxReconnectAttempts    = 5;      // 最大重连尝试次数
+        uint32_t reconnectBackoffMs      = 2000;   // 重连退避时间（毫秒）
+        bool     enableReconnectBackoff  = true;   // 启用重连退避策略
+
+        bool enableProxy                 = false;  // 启用代理
+        std::string proxyHost            = "";     // 代理服务器地址
+        uint16_t proxyPort               = 7890;   // 代理服务器端口
+        std::string proxyUser            = "";     // 代理用户名
+        std::string proxyPassword        = "";     // 代理密码
     };
 
     /**
@@ -401,21 +408,15 @@ private:
 
 private:
     // ===================== 成员变量 =====================
-    UploadConfig            m_uploadConfig;            // 上传配置
-    UIConfig                m_uiConfig;                // UI配置
-    NetworkConfig           m_networkConfig;           // 网络配置
-
-    ConfigChangeCallback    m_changeCallback;          // 配置变更回调
-    mutable std::string     m_lastError;               // 最后的错误信息
-
-    // TOML相关辅助成员
-    std::string             m_currentConfigPath;       // 当前配置文件路径
-    mutable std::mutex      m_configMutex;             // 配置访问互斥锁
-
-    static std::unique_ptr<ClientConfigManager> m_instance;
-    static std::mutex       m_instanceMutex;
-
-    // ===================== TOML辅助方法 =====================
+    UploadConfig                                    m_uploadConfig;      // 上传配置
+    UIConfig                                        m_uiConfig;          // UI配置
+    NetworkConfig                                   m_networkConfig;     // 网络配置
+    ConfigChangeCallback                            m_changeCallback;    // 配置变更回调
+    mutable std::string                             m_lastError;         // 最后的错误信息
+    std::string                                     m_currentConfigPath; // 当前配置文件路径
+    mutable std::mutex                              m_configMutex;       // 配置访问互斥锁
+    static std::unique_ptr<ClientConfigManager>     m_instance;
+    static std::mutex                               m_instanceMutex;
 
     /**
      * @brief 从 TOML 表中安全获取值

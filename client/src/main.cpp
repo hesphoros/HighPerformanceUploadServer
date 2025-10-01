@@ -263,6 +263,22 @@ void TestConfig() {
     std::cout << "\n🏁 === ClientConfigManager 测试结束 ===" << std::endl;
 }
 
+void TestDefaultConfigUploadClient(){
+    auto& cfgMgr = ClientConfigManager::getInstance();
+    cfgMgr.loadFromFile("./config/upload_client.toml");
+    if (cfgMgr.validateConfig()) {
+        std::cout << "配置文件验证通过。" << std::endl;
+    } else {
+        std::cout << "配置文件验证失败，错误如下：" << std::endl;
+        for (const auto& err : cfgMgr.getValidationErrors()) {
+            std::cout << " - " << err << std::endl;
+        }
+    }
+
+    std::string str = cfgMgr.exportToTomlString();
+    std::cout << str << std::endl;
+}
+
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     SetConsoleOutputCP(CP_UTF8);
@@ -278,8 +294,8 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<Lusp_SyncFilesNotificationService> notifier = std::make_unique<Lusp_SyncFilesNotificationService>(Lusp_SyncUploadQueue::instance());
     notifier->start();
 
-    TestConfig();
-
+    // TestConfig();
+    TestDefaultConfigUploadClient();
 
     //client2.join();
     // 创建主窗口
