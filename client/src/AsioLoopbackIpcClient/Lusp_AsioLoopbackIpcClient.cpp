@@ -20,7 +20,10 @@ Lusp_AsioLoopbackIpcClient::Lusp_AsioLoopbackIpcClient(asio::io_context& io_cont
     const auto& uploadConfig = config_mgr_.getUploadConfig();
     g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_INFO,
         "[IPC] 初始化客户端: " + uploadConfig.serverHost + ":" + std::to_string(uploadConfig.serverPort));
-}void Lusp_AsioLoopbackIpcClient::connect() {
+}
+
+
+void Lusp_AsioLoopbackIpcClient::connect() {
     if (is_connecting_) {
         return; // 避免重复连接
     }

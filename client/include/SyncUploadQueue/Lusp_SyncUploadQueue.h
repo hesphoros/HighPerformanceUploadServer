@@ -25,7 +25,7 @@ class Lusp_SyncFilesNotificationService; // 前置声明
 #include "ThreadSafeRowLockQueue/ThreadSafeRowLockQueue.hpp"
 
 /**
- * @brief 高性能行级锁上传队列 - 使用标准C++实现
+ * @brief 高性能上传队列 - 使用标准C++实现
  * 
  * 核心设计：
  * - 入队锁和出队锁分离，UI线程和通知线程不互相阻塞
@@ -35,16 +35,16 @@ class Lusp_SyncFilesNotificationService; // 前置声明
 class Lusp_SyncUploadQueue {
 public:
     // 进度回调函数类型
-    using ProgressCallback = std::function<void(const std::string& filePath, int percentage, const std::string& status)>;
+    using ProgressCallback  = std::function<void(const std::string& filePath, int percentage, const std::string& status)>;
     using CompletedCallback = std::function<void(const std::string& filePath, bool success, const std::string& message)>;
 
     // 获取全局单例
     static Lusp_SyncUploadQueue& instance();
 
-   
-    void push(const std::u16string& filePath);                    // 推送单个文件
-    void push(const std::vector<std::u16string>& filePaths);      // 推送多个文件
-    void push(const Lusp_SyncUploadFileInfo& fileInfo);       // 推送文件信息对象
+
+    void push(const std::u16string& filePath);                   // 推送单个文件
+    void push(const std::vector<std::u16string>& filePaths);     // 推送多个文件
+    void push(const Lusp_SyncUploadFileInfo& fileInfo);          // 推送文件信息对象
     
    
     void setProgressCallback(ProgressCallback callback);
@@ -53,8 +53,8 @@ public:
     
   
     size_t pendingCount() const;
-    bool isActive() const;
-    bool empty() const;
+    bool   isActive() const;
+    bool   empty() const;
 
     friend class Lusp_SyncFilesNotificationService;
 private:

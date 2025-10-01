@@ -91,18 +91,7 @@ private:
      * @brief 监管线程主循环，阻塞等待队列有内容时自动pop并处理。
      */
     void notificationLoop();
-    Lusp_SyncUploadQueue& queueRef; // 保存队列引用
-    std::thread notifyThread; ///< 监管线程
-    std::atomic<bool> shouldStop{ false }; ///< 停止标志
-    SocketSendFunc socketSendFunc; ///< socket通信回调函数
-    // 性能统计
-    std::atomic<size_t> processedCount{ 0 }; ///< 已处理任务数
-    double totalLatencyMs{ 0 }; ///< 总处理延迟
-    mutable std::mutex latencyMutex; ///< 延迟统计锁
-    std::shared_ptr<Lusp_AsioLoopbackIpcClient> ipcClient_;
-    const ClientConfigManager* configMgr_;
-    std::shared_ptr<asio::io_context> ioContext_;
-    std::thread ioThread_;
+
 
     std::string ToFlatBuffer(const Lusp_SyncUploadFileInfo& info);
     /**
@@ -112,6 +101,23 @@ private:
      * @return 解析得到的Lusp_SyncUploadFileInfo对象
      */
     static Lusp_SyncUploadFileInfo FromFlatBuffer(const uint8_t* buf, size_t size);
+
+private:
+    
+    Lusp_SyncUploadQueue&                           queueRef;            // 保存队列引用
+    std::thread                                     notifyThread;        ///< 监管线程
+    std::atomic<bool>                               shouldStop{ false }; ///< 停止标志
+    SocketSendFunc                                  socketSendFunc;      ///< socket通信回调函数
+    // 性能统计
+    std::atomic<size_t>                             processedCount{ 0 }; ///< 已处理任务数
+    double                                          totalLatencyMs{ 0 }; ///< 总处理延迟
+    mutable std::mutex                              latencyMutex;        ///< 延迟统计锁
+    std::shared_ptr<Lusp_AsioLoopbackIpcClient>     ipcClient_;
+    const ClientConfigManager*                      configMgr_;
+    std::shared_ptr<asio::io_context>               ioContext_;
+    std::thread                                     ioThread_;
+
+  
 };
 
 

@@ -39,7 +39,7 @@ Lusp_SyncFilesNotificationService::Lusp_SyncFilesNotificationService(Lusp_SyncUp
         if (ipcClient_) {
             ipcClient_->send(out);
         }
-        });
+    });
     // 启动io_context线程
     ioThread_ = std::thread([this]() { ioContext_->run(); });
 }
