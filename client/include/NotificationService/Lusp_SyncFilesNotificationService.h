@@ -1,4 +1,6 @@
-#pragma once
+#ifndef LUSP_SYNCFILESNOTIFICATIONSERVICE_H
+#define LUSP_SYNCFILESNOTIFICATIONSERVICE_H
+
 #include <WinSock2.h>
 #include <thread>
 #include <atomic>
@@ -118,3 +120,4 @@ private:
 };
 
 
+#endif // LUSP_SYNCFILESNOTIFICATIONSERVICE_H

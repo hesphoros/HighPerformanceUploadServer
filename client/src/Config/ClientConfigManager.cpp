@@ -7,8 +7,6 @@
 #include <iostream>
 #include "utils/EnumConvert.hpp"
 
-// 不再使用 using namespace utils，以避免命名冲突
-
 using namespace utils;
 // TOML支持 - 使用项目内置toml11库
 #include <toml11/toml.hpp>
@@ -196,9 +194,9 @@ void ClientConfigManager::notifyConfigChanged(const std::string& section, const 
 std::string ClientConfigManager::getDefaultConfigPath() const {
     // 返回默认的配置文件路径
 #ifdef _WIN32
-    return "./config/upload_client.json";
+    return "./config/upload_client.toml";
 #else
-    return "~/.config/upload_client/config.json";
+    return "~/.config/upload_client/config.toml";
 #endif
 }
 
