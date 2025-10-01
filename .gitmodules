@@ -1,0 +1,3 @@
+[submodule "client/3rdParty/abseil-cpp"]
+	path = client/3rdParty/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git

@@ -85,11 +85,11 @@ typedef struct  Lusp_SyncUploadFileInfo {
     std::string                        sFileRecordTimeValue;        /*!< 文件记录时间 */
     std::string                        sFileMd5ValueInfo;           /*!< 文件MD5值 */
     Lusp_FileExistPolicy               eFileExistPolicy;            /*!< 文件存在策略 */
-    std::string                        sAuthTokenValues;            /** Wan 上传时的tokenkey LAN 中不使用 */
+    std::string                        sAuthTokenValues;            /*!< Wan 上传时的tokenkey LAN 中不使用 */
     uint64_t                           uUploadTimeStamp;            /*!< 上传时间戳  精确级别：毫秒级*/
     Lusp_UploadStatusInf               eUploadStatusInf;            /*!< 上传状态 */
     std::u16string                     sDescriptionInfo;            /*!< 描述信息 在没有上传成功时被赋值*/
-    std::chrono::steady_clock::time_point enqueueTime;              /*!< 入队时间戳（用于队列延迟统计）*/
+    std::chrono::steady_clock::time_point   enqueueTime;              /*!< 入队时间戳（用于队列延迟统计）*/
 
 }Lusp_SyncUploadFileInfo,* PLusp_SyncUploadFileInfo;
 

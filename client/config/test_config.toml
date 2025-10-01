@@ -1,0 +1,65 @@
+# 高性能文件上传客户端配置文件
+# 格式: TOML (Tom's Obvious, Minimal Language)
+# 生成时间: 2025-09-30
+
+[upload]
+server_host = "192.168.1.100"
+server_port = 8080
+upload_protocol = "TCP"
+max_concurrent_uploads = 8
+chunk_size = 2097152
+timeout_seconds = 30
+retry_count = 3
+retry_delay_ms = 1000
+max_upload_speed = 0
+max_file_size = 0
+enable_resume = true
+enable_compression = true
+compression_algorithm = "GZIP"
+enable_checksum = true
+checksum_algorithm = "MD5"
+overwrite = false
+enable_multipart = true
+enable_progress = true
+target_dir = "/uploads"
+use_ssl = false
+cert_file = ""
+private_key_file = ""
+ca_file = ""
+verify_server = true
+auth_token = ""
+log_level = ""
+log_file_path = ""
+enable_detailed_log = false
+client_version = "1.0.0"
+user_agent = "HesUploader/1.0"
+
+[ui]
+show_progress_details = true
+show_speed_info = true
+auto_start_upload = true
+minimize_to_tray = false
+show_notifications = true
+language = "en-US"
+theme = "dark"
+window_width = 1200
+window_height = 800
+window_maximized = false
+show_file_size = true
+show_file_type = true
+show_upload_time = true
+show_file_status = true
+
+[network]
+connect_timeout_ms = 10000
+read_timeout_ms = 30000
+write_timeout_ms = 30000
+buffer_size = 16384
+max_connections = 10
+enable_keep_alive = true
+keep_alive_interval_ms = 30000
+enable_proxy = true
+proxy_host = "proxy.example.com"
+proxy_port = 3128
+proxy_user = ""
+proxy_password = ""

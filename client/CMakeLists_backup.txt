@@ -71,28 +71,24 @@ set(FBS_FILES ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffer/upload_file_info.fbs)
 set(FBS_GEN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/generated)
 
 
-#abseil 配置 - 🚀 智能检测优化
-find_package(absl CONFIG)
-if(absl_FOUND)
-    message(STATUS "✅ 使用 vcpkg 预编译 Abseil 库 (快速)")
-    set(USING_VCPKG_ABSEIL TRUE)
+#abseil 配置
+# 🚀 优化 Abseil 构建设置以减少重复编译
+# 禁用不必要的 Abseil 组件
+set(ABSL_ENABLE_INSTALL OFF CACHE BOOL "")
+set(ABSL_BUILD_TESTING OFF CACHE BOOL "")
+set(ABSL_BUILD_MONOLITHIC_SHARED_LIBS OFF CACHE BOOL "")
+set(ABSL_USE_SYSTEM_INCLUDES ON CACHE BOOL "")
+set(ABSL_BUILD_DLL OFF CACHE BOOL "")
+set(ABSL_CONSUMER_CMAKE_TARGET_VISIBILITY OFF CACHE BOOL "")
+set(ABSL_PROPAGATE_CXX_STD ON CACHE BOOL "")
+
+# 只有在首次构建或源码变更时才重新编译
+if(NOT TARGET absl::base)
+    message(STATUS "🔄 正在构建 Abseil 库... (这可能需要几分钟)")
+    add_subdirectory(3rdParty/abseil-cpp)
+    message(STATUS "✅ Abseil 构建完成")
 else()
-    message(STATUS "🔄 vcpkg Abseil 未找到，使用源码构建")
-    set(USING_VCPKG_ABSEIL FALSE)
-    
-    # 优化源码构建设置
-    set(ABSL_ENABLE_INSTALL OFF CACHE BOOL "")
-    set(ABSL_BUILD_TESTING OFF CACHE BOOL "")
-    set(ABSL_BUILD_MONOLITHIC_SHARED_LIBS OFF CACHE BOOL "")
-    set(ABSL_USE_SYSTEM_INCLUDES ON CACHE BOOL "")
-    
-    if(NOT TARGET absl::base)
-        message(STATUS "🔄 正在构建 Abseil 库... (这可能需要几分钟)")
-        add_subdirectory(3rdParty/abseil-cpp)
-        message(STATUS "✅ Abseil 源码构建完成")
-    else()
-        message(STATUS "⚡ Abseil 已缓存，跳过构建")
-    endif()
+    message(STATUS "⚡ Abseil 已缓存，跳过构建")
 endif()
 
 # 自动查找 FlatBuffer 目录下所有 .fbs 文件并生成对应 .h/.cc
@@ -221,12 +217,8 @@ target_link_libraries(UploadClient PRIVATE
     absl::log
     absl::time
 )
-if(USING_VCPKG_ABSEIL)
-    message(STATUS "✅ 链接 vcpkg Abseil 预编译库 (快速)")
-else()
-    message(STATUS "⚠️ 链接本地构建 Abseil 库 (较慢)")
-    message(STATUS "💡 提示: 运行 'vcpkg install abseil:x64-windows' 可显著加速后续构建")
-endif()
+message(STATUS "✅ 使用本地Abseil源码库")
+message(STATUS "💡 提示: 如需加速构建，建议使用 'vcpkg install abseil:x64-windows' 安装预编译版本")
 
 # spdlog库链接
 target_link_libraries(UploadClient PRIVATE spdlog::spdlog)
