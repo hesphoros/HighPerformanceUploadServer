@@ -100,104 +100,104 @@ namespace ConfigSections {
 class ClientConfigManager {
 public:
 
-   /**
-     * @brief 上传配置结构体 - 包含所有上传相关配置
-     */
+    /**
+      * @brief 上传配置结构体 - 包含所有上传相关配置
+      */
     struct UploadConfig {
         // ===================== 基础网络配置 =====================
-        std::string serverHost          = "127.0.0.1";      // 服务器地址
-        uint16_t    serverPort          = 9000;             // 服务器端口
-        std::string uploadProtocol      = "TCP";            // 上传协议: HTTP/FTP/gRPC/WebSocket
+        std::string serverHost = "127.0.0.1";      // 服务器地址
+        uint16_t    serverPort = 9000;             // 服务器端口
+        std::string uploadProtocol = "TCP";            // 上传协议: HTTP/FTP/gRPC/WebSocket
 
         // ===================== 上传控制 =====================
-        uint32_t maxConcurrentUploads   = 4;            // 最大并发上传任务数
-        uint32_t chunkSize              = 1024 * 1024;  // 分块大小（默认1MB）
-        uint32_t timeoutSeconds         = 30;           // 单个请求超时时间
-        uint32_t retryCount             = 3;            // 上传失败重试次数
-        uint32_t retryDelayMs           = 1000;         // 重试间隔（毫秒）
-        uint64_t maxUploadSpeed         = 0;            // 最大上传速率 (bytes/s, 0=不限速)
-        uint64_t maxFileSize            = 0;            // 限制单文件最大大小 (0=不限)
+        uint32_t maxConcurrentUploads = 4;            // 最大并发上传任务数
+        uint32_t chunkSize = 1024 * 1024;  // 分块大小（默认1MB）
+        uint32_t timeoutSeconds = 30;           // 单个请求超时时间
+        uint32_t retryCount = 3;            // 上传失败重试次数
+        uint32_t retryDelayMs = 1000;         // 重试间隔（毫秒）
+        uint64_t maxUploadSpeed = 0;            // 最大上传速率 (bytes/s, 0=不限速)
+        uint64_t maxFileSize = 0;            // 限制单文件最大大小 (0=不限)
 
         // ===================== 功能开关 =====================
-        bool enableResume               = true;         // 是否启用断点续传
-        bool enableCompression          = true;         // 是否对分块数据压缩
+        bool enableResume = true;         // 是否启用断点续传
+        bool enableCompression = true;         // 是否对分块数据压缩
         CompressionAlgorithm compressionAlgo = CompressionAlgorithm::GZIP; // 压缩算法
-        bool enableChecksum             = true;         // 是否启用完整性校验
-        ChecksumAlgorithm checksumAlgo  = ChecksumAlgorithm::MD5;  // 校验算法
-        bool overwrite                  = false;        // 是否覆盖服务器已存在的文件
-        bool enableMultipart            = true;         // 是否启用多部分表单上传
-        bool enableProgress             = true;         // 是否启用进度回调
+        bool enableChecksum = true;         // 是否启用完整性校验
+        ChecksumAlgorithm checksumAlgo = ChecksumAlgorithm::MD5;  // 校验算法
+        bool overwrite = false;        // 是否覆盖服务器已存在的文件
+        bool enableMultipart = true;         // 是否启用多部分表单上传
+        bool enableProgress = true;         // 是否启用进度回调
 
         // ===================== 文件相关 =====================
         std::string targetDir = "/uploads";   // 服务器目标目录
 
 
-        bool useSSL                     = false;        // 是否启用 SSL/TLS
-        std::string certFile            = "";           // 客户端证书文件
-        std::string privateKeyFile      = "";           // 私钥文件
-        std::string caFile              = "";           // CA 证书路径
-        bool verifyServer               = true;         // 是否校验服务器证书
-        std::string authToken           = "";           // 上传鉴权 Token
+        bool useSSL = false;        // 是否启用 SSL/TLS
+        std::string certFile = "";           // 客户端证书文件
+        std::string privateKeyFile = "";           // 私钥文件
+        std::string caFile = "";           // CA 证书路径
+        bool verifyServer = true;         // 是否校验服务器证书
+        std::string authToken = "";           // 上传鉴权 Token
 
-        std::string logLevel            = "";           // 日志级别: DEBUG/INFO/WARN/ERROR
-        std::string logFilePath         = "";           // 日志文件路径 (为空=只输出到控制台)
-        bool enableDetailedLog          = false;        // 是否输出详细日志 (每个分块/重试)
+        std::string logLevel = "";           // 日志级别: DEBUG/INFO/WARN/ERROR
+        std::string logFilePath = "";           // 日志文件路径 (为空=只输出到控制台)
+        bool enableDetailedLog = false;        // 是否输出详细日志 (每个分块/重试)
 
         // ===================== 扩展 =====================
-        std::string clientVersion       = CLIENT_VERSION;      // 客户端版本号，用于服务端识别
-        std::string userAgent           = USER_AGENT;          // 自定义 User-Agent (HTTP类协议)
+        std::string clientVersion = CLIENT_VERSION;      // 客户端版本号，用于服务端识别
+        std::string userAgent = USER_AGENT;          // 自定义 User-Agent (HTTP类协议)
         std::vector<std::string> excludePatterns; // 排除的文件模式 (*.tmp, *.bak)
     };
 
-      /**
-     * @brief UI配置结构体 - 用户界面相关配置
-     */
+    /**
+   * @brief UI配置结构体 - 用户界面相关配置
+   */
     struct UIConfig {
         bool showProgressDetails = true;      // 显示详细进度信息
-        bool showSpeedInfo       = true;      // 显示速度信息
-        bool autoStartUpload     = true;      // 自动开始上传
-        bool minimizeToTray      = false;     // 最小化到系统托盘
-        bool showNotifications   = true;      // 显示系统通知
+        bool showSpeedInfo = true;      // 显示速度信息
+        bool autoStartUpload = true;      // 自动开始上传
+        bool minimizeToTray = false;     // 最小化到系统托盘
+        bool showNotifications = true;      // 显示系统通知
 
-        std::string language     = "zh-CN";   // 界面语言
-        std::string theme        = "default"; // 主题样式
+        std::string language = "zh-CN";   // 界面语言
+        std::string theme = "default"; // 主题样式
 
         // 窗口状态
-        int windowWidth          = 1000;
-        int windowHeight         = 700;
-        bool windowMaximized     = false;
+        int windowWidth = 1000;
+        int windowHeight = 700;
+        bool windowMaximized = false;
 
         // 文件列表显示
-        bool showFileSize        = true;
-        bool showFileType        = true;
-        bool showUploadTime      = true;
-        bool showFileStatus      = true;
+        bool showFileSize = true;
+        bool showFileType = true;
+        bool showUploadTime = true;
+        bool showFileStatus = true;
     };
 
     /**
      * @brief 网络配置结构体 - 网络相关配置
      */
     struct NetworkConfig {
-        uint32_t connectTimeoutMs        = 5000;   // 连接超时时间
-        uint32_t readTimeoutMs           = 30000;  // 读取超时时间
-        uint32_t writeTimeoutMs          = 30000;  // 写入超时时间
+        uint32_t connectTimeoutMs = 5000;   // 连接超时时间
+        uint32_t readTimeoutMs = 30000;  // 读取超时时间
+        uint32_t writeTimeoutMs = 30000;  // 写入超时时间
 
-        uint32_t bufferSize              = 8192;   // 网络缓冲区大小
-        uint32_t maxConnections          = 10;     // 最大连接数
-        bool     enableKeepAlive         = true;   // 启用Keep-Alive
-        uint32_t keepAliveIntervalMs     = 30000;  // Keep-Alive间隔
+        uint32_t bufferSize = 8192;   // 网络缓冲区大小
+        uint32_t maxConnections = 10;     // 最大连接数
+        bool     enableKeepAlive = true;   // 启用Keep-Alive
+        uint32_t keepAliveIntervalMs = 30000;  // Keep-Alive间隔
 
-        bool     enableAutoReconnect     = true;   // 启用自动重连
-        uint32_t reconnectIntervalMs     = 1000;   // 重连间隔（毫秒）
-        uint32_t maxReconnectAttempts    = 5;      // 最大重连尝试次数
-        uint32_t reconnectBackoffMs      = 2000;   // 重连退避时间（毫秒）
-        bool     enableReconnectBackoff  = true;   // 启用重连退避策略
+        bool     enableAutoReconnect = true;   // 启用自动重连
+        uint32_t reconnectIntervalMs = 1000;   // 重连间隔（毫秒）
+        uint32_t maxReconnectAttempts = 5;      // 最大重连尝试次数
+        uint32_t reconnectBackoffMs = 2000;   // 重连退避时间（毫秒）
+        bool     enableReconnectBackoff = true;   // 启用重连退避策略
 
-        bool enableProxy                 = false;  // 启用代理
-        std::string proxyHost            = "";     // 代理服务器地址
-        uint16_t proxyPort               = 7890;   // 代理服务器端口
-        std::string proxyUser            = "";     // 代理用户名
-        std::string proxyPassword        = "";     // 代理密码
+        bool enableProxy = false;  // 启用代理
+        std::string proxyHost = "";     // 代理服务器地址
+        uint16_t proxyPort = 7890;   // 代理服务器端口
+        std::string proxyUser = "";     // 代理用户名
+        std::string proxyPassword = "";     // 代理密码
     };
 
     /**
@@ -405,6 +405,38 @@ private:
      * @return 解析成功返回true
      */
     bool parseFullTomlConfig(const std::string& tomlContent);
+
+    /**
+     * @brief 解析上传配置节
+     */
+    void parseUploadConfigSection(const toml::value& data);
+
+    /**
+     * @brief 解析UI配置节
+     */
+    void parseUIConfigSection(const toml::value& data);
+
+    /**
+     * @brief 解析网络配置节
+     */
+    void parseNetworkConfigSection(const toml::value& data);
+
+    /**
+     * @brief 通用配置解析工具函数 - 基础类型
+     */
+    template<typename T>
+    void parseConfigValue(const toml::value& section, const std::string& key, T& target);
+
+    /**
+     * @brief 通用配置解析工具函数 - 枚举类型
+     */
+    template<typename EnumType>
+    void parseEnumValue(const toml::value& section, const std::string& key, EnumType& target);
+
+    /**
+     * @brief 通用配置解析工具函数 - 字符串数组
+     */
+    void parseStringArray(const toml::value& section, const std::string& key, std::vector<std::string>& target);
 
 private:
     // ===================== 成员变量 =====================

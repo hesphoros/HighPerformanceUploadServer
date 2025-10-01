@@ -538,258 +538,10 @@ bool ClientConfigManager::parseFullTomlConfig(const std::string& tomlContent) {
         // 解析TOML字符串
         auto data = toml::parse_str(tomlContent);
 
-        // ===================== 解析上传配置节 [upload] =====================
-        if (data.contains("upload")) {
-            auto upload = data["upload"];
-
-            // 基本网络配置
-            if (upload.contains("server_host")) {
-                m_uploadConfig.serverHost = upload["server_host"].as_string();
-            }
-            if (upload.contains("server_port")) {
-                m_uploadConfig.serverPort = static_cast<uint16_t>(upload["server_port"].as_integer());
-            }
-            if (upload.contains("upload_protocol")) {
-                m_uploadConfig.uploadProtocol = upload["upload_protocol"].as_string();
-            }
-
-            // 性能控制参数
-            if (upload.contains("max_concurrent_uploads")) {
-                m_uploadConfig.maxConcurrentUploads = static_cast<uint32_t>(upload["max_concurrent_uploads"].as_integer());
-            }
-            if (upload.contains("chunk_size")) {
-                m_uploadConfig.chunkSize = static_cast<uint32_t>(upload["chunk_size"].as_integer());
-            }
-            if (upload.contains("timeout_seconds")) {
-                m_uploadConfig.timeoutSeconds = static_cast<uint32_t>(upload["timeout_seconds"].as_integer());
-            }
-
-            // 重试策略
-            if (upload.contains("retry_count")) {
-                m_uploadConfig.retryCount = static_cast<uint32_t>(upload["retry_count"].as_integer());
-            }
-            if (upload.contains("retry_delay_ms")) {
-                m_uploadConfig.retryDelayMs = static_cast<uint32_t>(upload["retry_delay_ms"].as_integer());
-            }
-
-            // 速度和大小限制
-            if (upload.contains("max_upload_speed")) {
-                m_uploadConfig.maxUploadSpeed = static_cast<uint64_t>(upload["max_upload_speed"].as_integer());
-            }
-            if (upload.contains("max_file_size")) {
-                m_uploadConfig.maxFileSize = static_cast<uint64_t>(upload["max_file_size"].as_integer());
-            }
-
-            // 功能开关
-            if (upload.contains("enable_resume")) {
-                m_uploadConfig.enableResume = upload["enable_resume"].as_boolean();
-            }
-            if (upload.contains("enable_compression")) {
-                m_uploadConfig.enableCompression = upload["enable_compression"].as_boolean();
-            }
-            if (upload.contains("enable_checksum")) {
-                m_uploadConfig.enableChecksum = upload["enable_checksum"].as_boolean();
-            }
-            if (upload.contains("overwrite")) {
-                m_uploadConfig.overwrite = upload["overwrite"].as_boolean();
-            }
-            if (upload.contains("enable_multipart")) {
-                m_uploadConfig.enableMultipart = upload["enable_multipart"].as_boolean();
-            }
-            if (upload.contains("enable_progress")) {
-                m_uploadConfig.enableProgress = upload["enable_progress"].as_boolean();
-            }
-
-            // 枚举类型解析
-            if (upload.contains("compression_algorithm")) {
-                std::string algo = upload["compression_algorithm"].as_string();
-                auto converted = StringToCompressionAlgorithm(algo);
-                if (converted.has_value()) {
-                    m_uploadConfig.compressionAlgo = converted.value();
-                }
-            }
-            if (upload.contains("checksum_algorithm")) {
-                std::string algo = upload["checksum_algorithm"].as_string();
-                auto converted = StringToChecksumAlgorithm(algo);
-                if (converted.has_value()) {
-                    m_uploadConfig.checksumAlgo = converted.value();
-                }
-            }
-
-            // 文件和路径配置
-            if (upload.contains("target_dir")) {
-                m_uploadConfig.targetDir = upload["target_dir"].as_string();
-            }
-
-            // 排除模式数组
-            if (upload.contains("exclude_patterns") && upload["exclude_patterns"].is_array()) {
-                m_uploadConfig.excludePatterns.clear();
-                auto patterns = upload["exclude_patterns"].as_array();
-                for (const auto& pattern : patterns) {
-                    m_uploadConfig.excludePatterns.push_back(pattern.as_string());
-                }
-            }
-
-            // SSL/TLS安全配置
-            if (upload.contains("use_ssl")) {
-                m_uploadConfig.useSSL = upload["use_ssl"].as_boolean();
-            }
-            if (upload.contains("cert_file")) {
-                m_uploadConfig.certFile = upload["cert_file"].as_string();
-            }
-            if (upload.contains("private_key_file")) {
-                m_uploadConfig.privateKeyFile = upload["private_key_file"].as_string();
-            }
-            if (upload.contains("ca_file")) {
-                m_uploadConfig.caFile = upload["ca_file"].as_string();
-            }
-            if (upload.contains("verify_server")) {
-                m_uploadConfig.verifyServer = upload["verify_server"].as_boolean();
-            }
-            if (upload.contains("auth_token")) {
-                m_uploadConfig.authToken = upload["auth_token"].as_string();
-            }
-
-            // 日志配置
-            if (upload.contains("log_level")) {
-                m_uploadConfig.logLevel = upload["log_level"].as_string();
-            }
-            if (upload.contains("log_file_path")) {
-                m_uploadConfig.logFilePath = upload["log_file_path"].as_string();
-            }
-            if (upload.contains("enable_detailed_log")) {
-                m_uploadConfig.enableDetailedLog = upload["enable_detailed_log"].as_boolean();
-            }
-
-            // 扩展信息
-            if (upload.contains("client_version")) {
-                m_uploadConfig.clientVersion = upload["client_version"].as_string();
-            }
-            if (upload.contains("user_agent")) {
-                m_uploadConfig.userAgent = upload["user_agent"].as_string();
-            }
-        }
-
-        // ===================== 解析UI配置节 [ui] =====================
-        if (data.contains("ui")) {
-            auto ui = data["ui"];
-
-            // 进度和显示配置
-            if (ui.contains("show_progress_details")) {
-                m_uiConfig.showProgressDetails = ui["show_progress_details"].as_boolean();
-            }
-            if (ui.contains("show_speed_info")) {
-                m_uiConfig.showSpeedInfo = ui["show_speed_info"].as_boolean();
-            }
-            if (ui.contains("auto_start_upload")) {
-                m_uiConfig.autoStartUpload = ui["auto_start_upload"].as_boolean();
-            }
-            if (ui.contains("minimize_to_tray")) {
-                m_uiConfig.minimizeToTray = ui["minimize_to_tray"].as_boolean();
-            }
-            if (ui.contains("show_notifications")) {
-                m_uiConfig.showNotifications = ui["show_notifications"].as_boolean();
-            }
-
-            // 界面设置
-            if (ui.contains("language")) {
-                m_uiConfig.language = ui["language"].as_string();
-            }
-            if (ui.contains("theme")) {
-                m_uiConfig.theme = ui["theme"].as_string();
-            }
-
-            // 窗口状态
-            if (ui.contains("window_width")) {
-                m_uiConfig.windowWidth = static_cast<int>(ui["window_width"].as_integer());
-            }
-            if (ui.contains("window_height")) {
-                m_uiConfig.windowHeight = static_cast<int>(ui["window_height"].as_integer());
-            }
-            if (ui.contains("window_maximized")) {
-                m_uiConfig.windowMaximized = ui["window_maximized"].as_boolean();
-            }
-
-            // 文件列表显示
-            if (ui.contains("show_file_size")) {
-                m_uiConfig.showFileSize = ui["show_file_size"].as_boolean();
-            }
-            if (ui.contains("show_file_type")) {
-                m_uiConfig.showFileType = ui["show_file_type"].as_boolean();
-            }
-            if (ui.contains("show_upload_time")) {
-                m_uiConfig.showUploadTime = ui["show_upload_time"].as_boolean();
-            }
-            if (ui.contains("show_file_status")) {
-                m_uiConfig.showFileStatus = ui["show_file_status"].as_boolean();
-            }
-        }
-
-        // ===================== 解析网络配置节 [network] =====================
-        if (data.contains("network")) {
-            auto network = data["network"];
-
-            // 超时设置
-            if (network.contains("connect_timeout_ms")) {
-                m_networkConfig.connectTimeoutMs = static_cast<uint32_t>(network["connect_timeout_ms"].as_integer());
-            }
-            if (network.contains("read_timeout_ms")) {
-                m_networkConfig.readTimeoutMs = static_cast<uint32_t>(network["read_timeout_ms"].as_integer());
-            }
-            if (network.contains("write_timeout_ms")) {
-                m_networkConfig.writeTimeoutMs = static_cast<uint32_t>(network["write_timeout_ms"].as_integer());
-            }
-
-            // 连接管理
-            if (network.contains("buffer_size")) {
-                m_networkConfig.bufferSize = static_cast<uint32_t>(network["buffer_size"].as_integer());
-            }
-            if (network.contains("max_connections")) {
-                m_networkConfig.maxConnections = static_cast<uint32_t>(network["max_connections"].as_integer());
-            }
-
-            // Keep-Alive配置
-            if (network.contains("enable_keep_alive")) {
-                m_networkConfig.enableKeepAlive = network["enable_keep_alive"].as_boolean();
-            }
-            if (network.contains("keep_alive_interval_ms")) {
-                m_networkConfig.keepAliveIntervalMs = static_cast<uint32_t>(network["keep_alive_interval_ms"].as_integer());
-            }
-
-            // 重连配置
-            if (network.contains("enable_auto_reconnect")) {
-                m_networkConfig.enableAutoReconnect = network["enable_auto_reconnect"].as_boolean();
-            }
-            if (network.contains("reconnect_interval_ms")) {
-                m_networkConfig.reconnectIntervalMs = static_cast<uint32_t>(network["reconnect_interval_ms"].as_integer());
-            }
-            if (network.contains("max_reconnect_attempts")) {
-                m_networkConfig.maxReconnectAttempts = static_cast<uint32_t>(network["max_reconnect_attempts"].as_integer());
-            }
-            if (network.contains("reconnect_backoff_ms")) {
-                m_networkConfig.reconnectBackoffMs = static_cast<uint32_t>(network["reconnect_backoff_ms"].as_integer());
-            }
-            if (network.contains("enable_reconnect_backoff")) {
-                m_networkConfig.enableReconnectBackoff = network["enable_reconnect_backoff"].as_boolean();
-            }
-
-            // 代理设置
-            if (network.contains("enable_proxy")) {
-                m_networkConfig.enableProxy = network["enable_proxy"].as_boolean();
-            }
-            if (network.contains("proxy_host")) {
-                m_networkConfig.proxyHost = network["proxy_host"].as_string();
-            }
-            if (network.contains("proxy_port")) {
-                m_networkConfig.proxyPort = static_cast<uint16_t>(network["proxy_port"].as_integer());
-            }
-            if (network.contains("proxy_user")) {
-                m_networkConfig.proxyUser = network["proxy_user"].as_string();
-            }
-            if (network.contains("proxy_password")) {
-                m_networkConfig.proxyPassword = network["proxy_password"].as_string();
-            }
-        }
+        // 使用映射表和抽象函数来减少重复代码
+        parseUploadConfigSection(data);
+        parseUIConfigSection(data);
+        parseNetworkConfigSection(data);
 
         g_luspLogWriteImpl.WriteLogContent(LOG_INFO, "TOML配置解析成功 - 已解析所有配置节");
         return true;
@@ -801,4 +553,208 @@ bool ClientConfigManager::parseFullTomlConfig(const std::string& tomlContent) {
         return false;
     }
 }
+
+// ===================== 优化的TOML解析方法实现 =====================
+
+template<typename T>
+void ClientConfigManager::parseConfigValue(const toml::value& section, const std::string& key, T& target) {
+    if (section.contains(key)) {
+        try {
+            if constexpr (std::is_same_v<T, std::string>) {
+                target = section.at(key).as_string();
+            }
+            else if constexpr (std::is_same_v<T, bool>) {
+                target = section.at(key).as_boolean();
+            }
+            else if constexpr (std::is_same_v<T, int>) {
+                target = static_cast<int>(section.at(key).as_integer());
+            }
+            else if constexpr (std::is_same_v<T, uint16_t>) {
+                target = static_cast<uint16_t>(section.at(key).as_integer());
+            }
+            else if constexpr (std::is_same_v<T, uint32_t>) {
+                target = static_cast<uint32_t>(section.at(key).as_integer());
+            }
+            else if constexpr (std::is_same_v<T, uint64_t>) {
+                target = static_cast<uint64_t>(section.at(key).as_integer());
+            }
+        }
+        catch (const std::exception& e) {
+            g_luspLogWriteImpl.WriteLogContent(LOG_WARN,
+                "解析配置项失败 [" + key + "]: " + e.what());
+        }
+    }
+}
+
+template<typename EnumType>
+void ClientConfigManager::parseEnumValue(const toml::value& section, const std::string& key, EnumType& target) {
+    if (section.contains(key)) {
+        try {
+            std::string enumStr = section.at(key).as_string();
+            if constexpr (std::is_same_v<EnumType, CompressionAlgorithm>) {
+                auto converted = StringToCompressionAlgorithm(enumStr);
+                if (converted.has_value()) {
+                    target = converted.value();
+                }
+            }
+            else if constexpr (std::is_same_v<EnumType, ChecksumAlgorithm>) {
+                auto converted = StringToChecksumAlgorithm(enumStr);
+                if (converted.has_value()) {
+                    target = converted.value();
+                }
+            }
+        }
+        catch (const std::exception& e) {
+            g_luspLogWriteImpl.WriteLogContent(LOG_WARN,
+                "解析枚举配置项失败 [" + key + "]: " + e.what());
+        }
+    }
+}
+
+void ClientConfigManager::parseStringArray(const toml::value& section, const std::string& key, std::vector<std::string>& target) {
+    if (section.contains(key) && section.at(key).is_array()) {
+        try {
+            target.clear();
+            auto array = section.at(key).as_array();
+            for (const auto& item : array) {
+                target.push_back(item.as_string());
+            }
+        }
+        catch (const std::exception& e) {
+            g_luspLogWriteImpl.WriteLogContent(LOG_WARN,
+                "解析字符串数组配置项失败 [" + key + "]: " + e.what());
+        }
+    }
+}
+
+void ClientConfigManager::parseUploadConfigSection(const toml::value& data) {
+    if (!data.contains("upload")) return;
+
+    auto upload = data.at("upload");
+
+    // 使用抽象工具函数来减少重复代码 - 基本配置
+    parseConfigValue(upload, "server_host", m_uploadConfig.serverHost);
+    parseConfigValue(upload, "server_port", m_uploadConfig.serverPort);
+    parseConfigValue(upload, "upload_protocol", m_uploadConfig.uploadProtocol);
+
+    // 性能控制参数
+    parseConfigValue(upload, "max_concurrent_uploads", m_uploadConfig.maxConcurrentUploads);
+    parseConfigValue(upload, "chunk_size", m_uploadConfig.chunkSize);
+    parseConfigValue(upload, "timeout_seconds", m_uploadConfig.timeoutSeconds);
+
+    // 重试策略
+    parseConfigValue(upload, "retry_count", m_uploadConfig.retryCount);
+    parseConfigValue(upload, "retry_delay_ms", m_uploadConfig.retryDelayMs);
+
+    // 速度和大小限制
+    parseConfigValue(upload, "max_upload_speed", m_uploadConfig.maxUploadSpeed);
+    parseConfigValue(upload, "max_file_size", m_uploadConfig.maxFileSize);
+
+    // 功能开关
+    parseConfigValue(upload, "enable_resume", m_uploadConfig.enableResume);
+    parseConfigValue(upload, "enable_compression", m_uploadConfig.enableCompression);
+    parseConfigValue(upload, "enable_checksum", m_uploadConfig.enableChecksum);
+    parseConfigValue(upload, "overwrite", m_uploadConfig.overwrite);
+    parseConfigValue(upload, "enable_multipart", m_uploadConfig.enableMultipart);
+    parseConfigValue(upload, "enable_progress", m_uploadConfig.enableProgress);
+
+    // 枚举类型
+    parseEnumValue(upload, "compression_algorithm", m_uploadConfig.compressionAlgo);
+    parseEnumValue(upload, "checksum_algorithm", m_uploadConfig.checksumAlgo);
+
+    // 文件和路径配置
+    parseConfigValue(upload, "target_dir", m_uploadConfig.targetDir);
+
+    // SSL/TLS安全配置
+    parseConfigValue(upload, "use_ssl", m_uploadConfig.useSSL);
+    parseConfigValue(upload, "cert_file", m_uploadConfig.certFile);
+    parseConfigValue(upload, "private_key_file", m_uploadConfig.privateKeyFile);
+    parseConfigValue(upload, "ca_file", m_uploadConfig.caFile);
+    parseConfigValue(upload, "verify_server", m_uploadConfig.verifyServer);
+    parseConfigValue(upload, "auth_token", m_uploadConfig.authToken);
+
+    // 日志配置
+    parseConfigValue(upload, "log_level", m_uploadConfig.logLevel);
+    parseConfigValue(upload, "log_file_path", m_uploadConfig.logFilePath);
+    parseConfigValue(upload, "enable_detailed_log", m_uploadConfig.enableDetailedLog);
+
+    // 扩展信息
+    parseConfigValue(upload, "client_version", m_uploadConfig.clientVersion);
+    parseConfigValue(upload, "user_agent", m_uploadConfig.userAgent);
+
+    // 特殊处理：字符串数组
+    parseStringArray(upload, "exclude_patterns", m_uploadConfig.excludePatterns);
+}
+
+void ClientConfigManager::parseUIConfigSection(const toml::value& data) {
+    if (!data.contains("ui")) return;
+
+    auto ui = data.at("ui");
+
+    // 进度和显示配置
+    parseConfigValue(ui, "show_progress_details", m_uiConfig.showProgressDetails);
+    parseConfigValue(ui, "show_speed_info", m_uiConfig.showSpeedInfo);
+    parseConfigValue(ui, "auto_start_upload", m_uiConfig.autoStartUpload);
+    parseConfigValue(ui, "minimize_to_tray", m_uiConfig.minimizeToTray);
+    parseConfigValue(ui, "show_notifications", m_uiConfig.showNotifications);
+
+    // 界面设置
+    parseConfigValue(ui, "language", m_uiConfig.language);
+    parseConfigValue(ui, "theme", m_uiConfig.theme);
+
+    // 窗口状态
+    parseConfigValue(ui, "window_width", m_uiConfig.windowWidth);
+    parseConfigValue(ui, "window_height", m_uiConfig.windowHeight);
+    parseConfigValue(ui, "window_maximized", m_uiConfig.windowMaximized);
+
+    // 文件列表显示
+    parseConfigValue(ui, "show_file_size", m_uiConfig.showFileSize);
+    parseConfigValue(ui, "show_file_type", m_uiConfig.showFileType);
+    parseConfigValue(ui, "show_upload_time", m_uiConfig.showUploadTime);
+    parseConfigValue(ui, "show_file_status", m_uiConfig.showFileStatus);
+}
+
+void ClientConfigManager::parseNetworkConfigSection(const toml::value& data) {
+    if (!data.contains("network")) return;
+
+    auto network = data.at("network");
+
+    // 超时设置
+    parseConfigValue(network, "connect_timeout_ms", m_networkConfig.connectTimeoutMs);
+    parseConfigValue(network, "read_timeout_ms", m_networkConfig.readTimeoutMs);
+    parseConfigValue(network, "write_timeout_ms", m_networkConfig.writeTimeoutMs);
+
+    // 连接管理
+    parseConfigValue(network, "buffer_size", m_networkConfig.bufferSize);
+    parseConfigValue(network, "max_connections", m_networkConfig.maxConnections);
+
+    // Keep-Alive配置
+    parseConfigValue(network, "enable_keep_alive", m_networkConfig.enableKeepAlive);
+    parseConfigValue(network, "keep_alive_interval_ms", m_networkConfig.keepAliveIntervalMs);
+
+    // 重连配置
+    parseConfigValue(network, "enable_auto_reconnect", m_networkConfig.enableAutoReconnect);
+    parseConfigValue(network, "reconnect_interval_ms", m_networkConfig.reconnectIntervalMs);
+    parseConfigValue(network, "max_reconnect_attempts", m_networkConfig.maxReconnectAttempts);
+    parseConfigValue(network, "reconnect_backoff_ms", m_networkConfig.reconnectBackoffMs);
+    parseConfigValue(network, "enable_reconnect_backoff", m_networkConfig.enableReconnectBackoff);
+
+    // 代理设置
+    parseConfigValue(network, "enable_proxy", m_networkConfig.enableProxy);
+    parseConfigValue(network, "proxy_host", m_networkConfig.proxyHost);
+    parseConfigValue(network, "proxy_port", m_networkConfig.proxyPort);
+    parseConfigValue(network, "proxy_user", m_networkConfig.proxyUser);
+    parseConfigValue(network, "proxy_password", m_networkConfig.proxyPassword);
+}
+
+// 模板实例化
+template void ClientConfigManager::parseConfigValue<std::string>(const toml::value&, const std::string&, std::string&);
+template void ClientConfigManager::parseConfigValue<bool>(const toml::value&, const std::string&, bool&);
+template void ClientConfigManager::parseConfigValue<int>(const toml::value&, const std::string&, int&);
+template void ClientConfigManager::parseConfigValue<uint16_t>(const toml::value&, const std::string&, uint16_t&);
+template void ClientConfigManager::parseConfigValue<uint32_t>(const toml::value&, const std::string&, uint32_t&);
+template void ClientConfigManager::parseConfigValue<uint64_t>(const toml::value&, const std::string&, uint64_t&);
+
+template void ClientConfigManager::parseEnumValue<CompressionAlgorithm>(const toml::value&, const std::string&, CompressionAlgorithm&);
+template void ClientConfigManager::parseEnumValue<ChecksumAlgorithm>(const toml::value&, const std::string&, ChecksumAlgorithm&);
 
