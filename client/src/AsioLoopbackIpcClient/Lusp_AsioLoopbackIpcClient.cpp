@@ -1,10 +1,11 @@
 #include "AsioLoopbackIpcClient/Lusp_AsioLoopbackIpcClient.h"
 #include "Config/ClientConfigManager.h"
 #include "log_headers.h"
+#include "utils/SystemErrorUtil.h"
 #include <chrono>
 #include <thread>
 
-// 构造函数：使用 ClientConfigManager
+
 Lusp_AsioLoopbackIpcClient::Lusp_AsioLoopbackIpcClient(asio::io_context& io_context, const ClientConfigManager& configMgr)
     : io_context_(io_context)
     , config_mgr_(configMgr)
@@ -25,7 +26,7 @@ Lusp_AsioLoopbackIpcClient::Lusp_AsioLoopbackIpcClient(asio::io_context& io_cont
 
 void Lusp_AsioLoopbackIpcClient::connect() {
     if (is_connecting_) {
-        return; // 避免重复连接
+        return;
     }
 
     is_connecting_ = true;
@@ -78,12 +79,13 @@ void Lusp_AsioLoopbackIpcClient::send(const std::string& message) {
         asio::async_write(*socket_, asio::buffer(*data),
             [this, data, len](std::error_code ec, std::size_t bytes_sent) {
                 if (!ec) {
+
                     g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_DEBUG,
                         "[IPC] 消息发送成功，长度: " + std::to_string(len));
                 }
                 else {
                     g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_ERROR,
-                        "[IPC] 消息发送失败: " + ec.message());
+                        "[IPC] 消息发送失败: " + SystemErrorUtil::GetErrorMessage(ec));
                 }
             });
     }
@@ -177,7 +179,7 @@ void Lusp_AsioLoopbackIpcClient::handle_connect_result(const std::error_code& ec
     }
     else {
         g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_ERROR,
-            "[IPC] 连接失败: " + ec.message());
+            "[IPC] 连接失败: " + SystemErrorUtil::GetErrorMessage(ec));
         try_reconnect();
     }
 }
@@ -195,7 +197,7 @@ void Lusp_AsioLoopbackIpcClient::handle_read_result(const std::error_code& ec, s
     }
     else {
         g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_WARN,
-            "[IPC] 读取失败: " + ec.message());
+            "[IPC] 读取失败: " + SystemErrorUtil::GetErrorMessage(ec));
         try_reconnect();
     }
 }

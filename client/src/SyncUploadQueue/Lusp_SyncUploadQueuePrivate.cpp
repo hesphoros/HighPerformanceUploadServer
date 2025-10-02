@@ -1,11 +1,12 @@
 #include "Lusp_SyncUploadQueuePrivate.h"
-#include <filesystem>
-#include "FileInfo/FileInfo.h"
 #include "log_headers.h"
-#include "log/UniConv.h"
+#include "UniConv.h"
+#include <filesystem>
+
 
 Lusp_SyncUploadQueuePrivate::Lusp_SyncUploadQueuePrivate()
-    : m_autoStart(true), m_isRunning(false), m_shouldStop(false) {}
+    : m_autoStart(true), m_isRunning(false), m_shouldStop(false) {
+}
 
 Lusp_SyncUploadQueuePrivate::~Lusp_SyncUploadQueuePrivate() {
     cleanup();
@@ -32,8 +33,8 @@ void Lusp_SyncUploadQueuePrivate::pushFileInfo(const Lusp_SyncUploadFileInfoHand
     const_cast<Lusp_SyncUploadFileInfoHandler&>(handler).setCurrentTimestampMs();
     const auto& fileInfo = handler.getFileInfo();
     g_LogSyncUploadQueueInfo.WriteLogContent(
-        LOG_INFO_U16,
-        u"Dequeue: " +  fileInfo.sFileFullNameValue + u" (Type: " + handler.getFileTypeTextU16() + u")"
+        LOG_INFO,
+        "Dequeue: " + LUSP_UNICONV->ToUtf8FromUtf16LE(fileInfo.sFileFullNameValue) + " (Type: " + handler.getFileTypeText() + ")"
     );
     g_LogSyncUploadQueueInfo.WriteLogContent(
         LOG_INFO,
@@ -61,7 +62,7 @@ void Lusp_SyncUploadQueuePrivate::pushFileInfo(const Lusp_SyncUploadFileInfoHand
     );
     g_LogSyncUploadQueueInfo.WriteLogContent(
         LOG_INFO,
-        "File Description: " +  LUSP_UNICONV->ToLocaleFromUtf16LE (fileInfo.sDescriptionInfo )
+        "File Description: " + LUSP_UNICONV->ToUtf8FromUtf16LE(fileInfo.sDescriptionInfo)
     );
     g_LogSyncUploadQueueInfo.WriteLogContent(
         LOG_INFO,
@@ -69,7 +70,7 @@ void Lusp_SyncUploadQueuePrivate::pushFileInfo(const Lusp_SyncUploadFileInfoHand
     );
     g_LogSyncUploadQueueInfo.WriteLogContent(
         LOG_INFO,
-        "File Client Device: " + LUSP_UNICONV->ToLocaleFromUtf16LE(fileInfo.sLanClientDevice)
+        "File Client Device: " + LUSP_UNICONV->ToUtf8FromUtf16LE(fileInfo.sLanClientDevice)
     );
     g_LogSyncUploadQueueInfo.WriteLogContent(
         LOG_INFO,
@@ -78,7 +79,7 @@ void Lusp_SyncUploadQueuePrivate::pushFileInfo(const Lusp_SyncUploadFileInfoHand
 
     g_LogSyncUploadQueueInfo.WriteLogContent(
         LOG_INFO,
-        "File Only Name: " +  LUSP_UNICONV->ToLocaleFromUtf16LE (fileInfo.sOnlyFileNameValue  )// 使用文件名作为唯一标识
+        "File Only Name: " + LUSP_UNICONV->ToUtf8FromUtf16LE(fileInfo.sOnlyFileNameValue)// 使用文件名作为唯一标识
     );
 
     g_LogSyncUploadQueueInfo.WriteLogContent(

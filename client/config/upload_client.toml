@@ -10,110 +10,110 @@
 # =============================================================================
 [upload]
 # 基础网络配置
-server_host = "127.0.0.1" # 服务器地址
-server_port = 9000        # 服务器端口
-upload_protocol = "TCP"   # 上传协议: HTTP/FTP/gRPC/WebSocket/TCP
+server_host     = "127.0.0.1"           # 服务器地址
+server_port     =  9000                 # 服务器端口
+upload_protocol = "TCP"                 # 上传协议: HTTP/FTP/gRPC/WebSocket/TCP
 
 # 上传控制参数
-max_concurrent_uploads = 4 # 最大并发上传任务数
-chunk_size = 1048576       # 分块大小（字节，默认1MB）
-timeout_seconds = 30       # 单个请求超时时间(30s)
-retry_count = 3            # 上传失败重试次数
-retry_delay_ms = 1000      # 重试间隔（毫秒）
-max_upload_speed = 0       # 最大上传速率 (bytes/s, 0=不限速)
-max_file_size = 0          # 限制单文件最大大小 (0=不限)
+max_concurrent_uploads = 4              # 最大并发上传任务数
+chunk_size             = 1048576        # 分块大小（字节，默认1MB）
+timeout_seconds        = 30             # 单个请求超时时间(30s)
+retry_count            = 3              # 上传失败重试次数
+retry_delay_ms         = 1000           # 重试间隔（毫秒）
+max_upload_speed       = 0              # 最大上传速率 (bytes/s, 0=不限速)
+max_file_size          = 0              # 限制单文件最大大小 (0=不限)
 
 # 功能开关
-enable_resume = true           # 是否启用断点续传
-enable_compression = true      # 是否对分块数据压缩
-compression_algorithm = "GZIP" # 压缩算法: NONE/GZIP/ZSTD/LZ4/BROTLI/LZMA
-enable_checksum = true         # 是否启用完整性校验
-checksum_algorithm = "MD5"     # 校验算法: NONE/CRC32/MD5/SHA1/SHA256/SHA512/BLAKE2
-overwrite = false              # 是否覆盖服务器已存在的文件
-enable_multipart = true        # 是否启用多部分表单上传
-enable_progress = true         # 是否启用进度回调
+enable_resume          = true           # 是否启用断点续传
+enable_compression     = true           # 是否对分块数据压缩
+compression_algorithm  = "GZIP"         # 压缩算法: NONE/GZIP/ZSTD/LZ4/BROTLI/LZMA
+enable_checksum        = true           # 是否启用完整性校验
+checksum_algorithm     = "MD5"          # 校验算法: NONE/CRC32/MD5/SHA1/SHA256/SHA512/BLAKE2
+overwrite              = false          # 是否覆盖服务器已存在的文件
+enable_multipart       = true           # 是否启用多部分表单上传
+enable_progress        = true           # 是否启用进度回调
 
 # 文件相关
-target_dir = "/uploads" # 服务器目标目录
-exclude_patterns = [ # 排除的文件模式
+target_dir = "/uploads"                 # 服务器目标目录
+exclude_patterns = [                    # 排除的文件模式
     "*.tmp",
-    "*.bak",
+    "*.bak", 
     "*.log",
     ".DS_Store",
-    "Thumbs.db",
+    "Thumbs.db"
 ]
 
 # 安全/认证
-use_ssl = false       # 是否启用 SSL/TLS
-cert_file = ""        # 客户端证书文件
-private_key_file = "" # 私钥文件
-ca_file = ""          # CA 证书路径
-verify_server = true  # 是否校验服务器证书
-auth_token = ""       # 上传鉴权 Token
+use_ssl             = false              # 是否启用 SSL/TLS
+cert_file           = ""                 # 客户端证书文件
+private_key_file    = ""                 # 私钥文件
+ca_file             = ""                 # CA 证书路径
+verify_server       = true               # 是否校验服务器证书
+auth_token          = ""                 # 上传鉴权 Token
 
 # 日志 & 调试
-log_level = "INFO"                 # 日志级别: DEBUG/INFO/WARN/ERROR
-log_file_path = "./log/client.log" # 日志文件路径 (为空=只输出到控制台)
-enable_detailed_log = false        # 是否输出详细日志 (每个分块/重试)
+log_level           = "INFO"             # 日志级别: DEBUG/INFO/WARN/ERROR
+log_file_path       = "./log/client.log" # 日志文件路径 (为空=只输出到控制台)
+enable_detailed_log = false              # 是否输出详细日志 (每个分块/重试)
 
 # 扩展信息
-client_version = "1.0.0"       # 客户端版本号，用于服务端识别
-user_agent = "HesUploader/1.0" # 自定义 User-Agent (HTTP类协议)
+client_version      = "1.0.0"            # 客户端版本号，用于服务端识别
+user_agent          = "HesUploader/1.0"  # 自定义 User-Agent (HTTP类协议)
 
 # =============================================================================
 # UI配置节 [ui]
 # =============================================================================
 [ui]
 # 进度显示
-show_progress_details = true # 显示详细进度信息
-show_speed_info = true       # 显示速度信息
-auto_start_upload = true     # 自动开始上传
-minimize_to_tray = false     # 最小化到系统托盘
-show_notifications = true    # 显示系统通知
+show_progress_details = true            # 显示详细进度信息
+show_speed_info       = true            # 显示速度信息
+auto_start_upload     = true            # 自动开始上传
+minimize_to_tray      = false           # 最小化到系统托盘
+show_notifications    = true            # 显示系统通知
 
 # 界面设置
-language = "zh-CN" # 界面语言: zh-CN/en-US/ja-JP
-theme = "default"  # 主题样式: default/dark/light
+language = "zh-CN"                      # 界面语言: zh-CN/en-US/ja-JP
+theme = "default"                       # 主题样式: default/dark/light
 
 # 窗口状态
-window_width = 1000      # 窗口宽度
-window_height = 700      # 窗口高度
-window_maximized = false # 是否最大化
+window_width     = 1000                 # 窗口宽度
+window_height    = 700                  # 窗口高度
+window_maximized = false                # 是否最大化
 
 # 文件列表显示
-show_file_size = true   # 显示文件大小
-show_file_type = true   # 显示文件类型
-show_upload_time = true # 显示上传时间
-show_file_status = true # 显示文件状态
+show_file_size   = true                 # 显示文件大小
+show_file_type   = true                 # 显示文件类型
+show_upload_time = true                 # 显示上传时间
+show_file_status = true                 # 显示文件状态
 
 # =============================================================================
 # 网络配置节 [network]
 # =============================================================================
 [network]
 # 超时设置
-connect_timeout_ms = 5000 # 连接超时时间（毫秒）
-read_timeout_ms = 30000   # 读取超时时间（毫秒）
-write_timeout_ms = 30000  # 写入超时时间（毫秒）
+connect_timeout_ms = 5000               # 连接超时时间（毫秒）
+read_timeout_ms    = 30000              # 读取超时时间（毫秒）
+write_timeout_ms   = 30000              # 写入超时时间（毫秒）
 
 # 连接管理
-buffer_size = 8192             # 网络缓冲区大小
-max_connections = 10           # 最大连接数
-enable_keep_alive = true       # 启用Keep-Alive
-keep_alive_interval_ms = 30000 # Keep-Alive间隔（毫秒）
+buffer_size            = 8192           # 网络缓冲区大小
+max_connections        = 10             # 最大连接数
+enable_keep_alive      = true           # 启用Keep-Alive
+keep_alive_interval_ms = 30000          # Keep-Alive间隔（毫秒）
 
 # 重连配置
-enable_auto_reconnect = true    # 启用自动重连
-reconnect_interval_ms = 1000    # 重连间隔（毫秒）
-max_reconnect_attempts = 5      # 最大重连尝试次数
-reconnect_backoff_ms = 2000     # 重连退避时间（毫秒）
-enable_reconnect_backoff = true # 启用重连退避策略
+enable_auto_reconnect    = true         # 启用自动重连
+reconnect_interval_ms    = 1000         # 重连间隔（毫秒）
+max_reconnect_attempts   = 5            # 最大重连尝试次数
+reconnect_backoff_ms     = 2000         # 重连退避时间（毫秒）
+enable_reconnect_backoff = true         # 启用重连退避策略
 
 # 代理设置
-enable_proxy = false # 启用代理
-proxy_host = ""      # 代理服务器地址
-proxy_port = 8080    # 代理服务器端口
-proxy_user = ""      # 代理用户名
-proxy_password = ""  # 代理密码
+enable_proxy    = false                 # 启用代理
+proxy_host      = ""                    # 代理服务器地址
+proxy_port      = 8080                  # 代理服务器端口
+proxy_user      = ""                    # 代理用户名
+proxy_password  = ""                    # 代理密码
 
 # =============================================================================
 # 高级配置节 [advanced] - 暂未实现，以下字段仅供参考

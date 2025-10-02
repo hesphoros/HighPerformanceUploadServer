@@ -22,3 +22,10 @@ LocalUploadServer/build/
 LocalUploadServer/out/
 client/log
 client/CMakeLists.txt.user
+client/ERROR_HANDLING_REFACTOR.md
+client/LOG_ENCODING_FINAL_FIX.md
+client/LOG_ENCODING_FIX.md
+client/LOG_ENCODING_TEST_REPORT.md
+client/UNICODE_CONV_REFACTOR.md
+client/SPDLOG_MIGRATION_SUCCESS.md
+client/MANDATORY_CONFIG_REQUIREMENT.md

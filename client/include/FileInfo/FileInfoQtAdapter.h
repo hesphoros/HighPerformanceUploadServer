@@ -11,15 +11,21 @@ class FileInfoQtAdapter {
 public:
     // 只允许用文件路径或Handler构造，不允许结构体构造
     FileInfoQtAdapter(const Lusp_SyncUploadFileInfoHandler& handler)
-        : m_handler(handler) {}
+        : m_handler(handler) {
+    }
     explicit FileInfoQtAdapter(const QString& filePath)
-        : m_handler(filePath.toStdU16String()) {}
+        : m_handler(filePath.toStdU16String()) {
+    }
     // explicit FileInfoQtAdapter(const Lusp_SyncUploadFileInfo& info) = delete;
 
     // Qt友好getter
     QString getId() const { return QString::fromStdString(m_handler.getId()); }
     QString getFilePath() const { return QString::fromStdString(m_handler.getFilePath()); }
-    QString getFileName() const { return QString::fromStdString(m_handler.getFileName()); }
+    // 使用 UTF-16 直接构造 QString，避免编码转换问题
+    QString getFileName() const {
+        const std::u16string& u16name = m_handler.getFileNameU16();
+        return QString::fromUtf16(u16name.data(), static_cast<int>(u16name.size()));
+    }
     qint64 getFileSize() const { return static_cast<qint64>(m_handler.getFileSize()); }
     QString getMd5Hash() const { return QString::fromStdString(m_handler.getMd5Hash()); }
     QString getClientDevice() const { return QString::fromStdString(m_handler.getClientDevice()); }

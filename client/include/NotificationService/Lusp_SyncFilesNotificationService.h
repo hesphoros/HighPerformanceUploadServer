@@ -37,12 +37,9 @@ public:
     using SocketSendFunc = std::function<void(const Lusp_SyncUploadFileInfo&)>;
 
     /**
-     * @brief 构造函数，传入全局上传队列引用。
+     * @brief 构造函数，自动管理IPC，外部必须传队列和配置管理器。
      * @param queue 需要被监管的上传队列引用。
-     */
-    explicit Lusp_SyncFilesNotificationService(Lusp_SyncUploadQueue& queue);
-    /**
-     * @brief 推荐构造：自动管理IPC，外部只需传队列和配置管理器。
+     * @param configMgr 客户端配置管理器引用（必需）。
      */
     Lusp_SyncFilesNotificationService(Lusp_SyncUploadQueue& queue, const ClientConfigManager& configMgr);
     /**
@@ -103,8 +100,8 @@ private:
     static Lusp_SyncUploadFileInfo FromFlatBuffer(const uint8_t* buf, size_t size);
 
 private:
-    
-    Lusp_SyncUploadQueue&                           queueRef;            // 保存队列引用
+
+    Lusp_SyncUploadQueue& queueRef;            // 保存队列引用
     std::thread                                     notifyThread;        ///< 监管线程
     std::atomic<bool>                               shouldStop{ false }; ///< 停止标志
     SocketSendFunc                                  socketSendFunc;      ///< socket通信回调函数
@@ -113,11 +110,11 @@ private:
     double                                          totalLatencyMs{ 0 }; ///< 总处理延迟
     mutable std::mutex                              latencyMutex;        ///< 延迟统计锁
     std::shared_ptr<Lusp_AsioLoopbackIpcClient>     ipcClient_;
-    const ClientConfigManager*                      configMgr_;
+    const ClientConfigManager* configMgr_;
     std::shared_ptr<asio::io_context>               ioContext_;
     std::thread                                     ioThread_;
 
-  
+
 };
 
 

@@ -51,6 +51,17 @@ set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "")  # 静态链接
 FetchContent_MakeAvailable(spdlog)
 message(STATUS "✅ spdlog库已通过FetchContent集成")
 
+# UniConv依赖
+FetchContent_Declare(
+    UniConv
+    GIT_REPOSITORY https://github.com/hesphoros/UniConv.git
+    GIT_TAG main
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(UniConv)
+message(STATUS "✅ UniConv库已通过FetchContent集成")
+
 # magic_enum库支持 (使用本地头文件)
 set(MAGIC_ENUM_LOCAL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/magic_enum")
 if(EXISTS "${MAGIC_ENUM_LOCAL_PATH}/magic_enum.hpp")
@@ -130,7 +141,7 @@ set(SRC_MAIN src/main.cpp)
 set(SRC_UI src/MainWindow.cpp src/FileListWidget.cpp)
 set(SRC_UPLOAD src/SyncUploadQueue/Lusp_SyncUploadQueue.cpp src/SyncUploadQueue/Lusp_SyncUploadQueuePrivate.cpp src/NotificationService/Lusp_SyncFilesNotificationService.cpp)
 set(SRC_FILEINFO src/FileInfo/FileInfo.cpp)
-set(SRC_LOG src/log_headers.cpp 3rdParty/src/log/UniConv.cpp 3rdParty/src/log/LightLogWriteImpl.cpp)
+set(SRC_LOG src/log_headers.cpp)
 set(SRC_HASH 3rdParty/src/hash-library/md5.cpp 3rdParty/src/hash-library/sha1.cpp 3rdParty/src/hash-library/sha256.cpp 3rdParty/src/hash-library/sha3.cpp 3rdParty/src/hash-library/crc32.cpp)
 set(SRC_LOOPBACK src/AsioLoopbackIpcClient/Lusp_AsioLoopbackIpcClient.cpp)
 set(SRC_CONFIG src/Config/ClientConfigManager.cpp)
@@ -159,6 +170,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/include/hash-library
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/include/log
     ${CMAKE_CURRENT_SOURCE_DIR}/src/SyncUploadQueue
+    ${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/uniconv-src/include
 )
 
 # 添加本地toml11头文件路径
@@ -189,6 +201,7 @@ target_include_directories(UploadClient PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ThreadSafeRowLockQueue
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src/SyncUploadQueue
+    ${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/uniconv-src/include
 )
 
 # FlatBuffers
@@ -231,6 +244,10 @@ endif()
 # spdlog库链接
 target_link_libraries(UploadClient PRIVATE spdlog::spdlog)
 message(STATUS "✅ 使用spdlog库 (FetchContent)")
+
+# UniConv库链接
+target_link_libraries(UploadClient PRIVATE UniConv::UniConv)
+message(STATUS "✅ 使用UniConv库 (FetchContent)")
 
 # 配置TOML库
 if(TOML11_LOCAL_AVAILABLE)

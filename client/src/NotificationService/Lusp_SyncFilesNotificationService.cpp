@@ -6,7 +6,7 @@
  */
 #include "NotificationService/Lusp_SyncFilesNotificationService.h"
 #include <iostream>
-#include "log/UniConv.h"
+#include "UniConv.h"
 #include "log_headers.h"
 #include "SyncUploadQueue/Lusp_SyncUploadQueue.h"
 #include "Lusp_SyncUploadQueuePrivate.h"
@@ -16,30 +16,28 @@
 #include "upload_file_info_generated.h"
 #include "flatbuffers/flatbuffers.h"
 
- /**
-  * @brief 构造函数，初始化队列指针和统计变量。
-  * @param queue 需要被监管的上传队列引用。
-  */
-Lusp_SyncFilesNotificationService::Lusp_SyncFilesNotificationService(Lusp_SyncUploadQueue& queue)
-    : queueRef(queue), shouldStop(false), totalLatencyMs(0), processedCount(0), configMgr_(nullptr) {
-}
 
-/**
- * @brief 构造函数，内部自动创建io_context和IPC客户端并管理线程，外部只需传队列和配置管理器即可。析构时自动清理。
- */
+ /**
+  * @brief 构造函数，内部自动创建io_context和IPC客户端并管理线程，外部必须传队列和配置管理器。析构时自动清理。
+  * @param queue 需要被监管的上传队列引用。
+  * @param configMgr 客户端配置管理器引用（必需）。
+  */
 Lusp_SyncFilesNotificationService::Lusp_SyncFilesNotificationService(Lusp_SyncUploadQueue& queue, const ClientConfigManager& configMgr)
     : queueRef(queue), shouldStop(false), totalLatencyMs(0), processedCount(0), configMgr_(&configMgr) {
+
     // 自动管理io_context和IPC客户端
     ioContext_ = std::make_shared<asio::io_context>();
     ipcClient_ = std::make_shared<Lusp_AsioLoopbackIpcClient>(*ioContext_, configMgr);
     ipcClient_->connect();
+
     // 自动设置socketSendFunc为FlatBuffers序列化并发送
     setSocketSendFunc([this](const Lusp_SyncUploadFileInfo& info) {
-        std::string out = ToFlatBuffer(info);
+        std::string msg = ToFlatBuffer(info);
         if (ipcClient_) {
-            ipcClient_->send(out);
+            ipcClient_->send(msg);
         }
-    });
+        });
+
     // 启动io_context线程
     ioThread_ = std::thread([this]() { ioContext_->run(); });
 }
@@ -135,10 +133,19 @@ void Lusp_SyncFilesNotificationService::notificationLoop() {
                 socketSendFunc(fileInfo);
             }
 
-            std::wcout << L"[NotificationService] socket send : " << std::wstring(fileInfo.sFileFullNameValue.begin(), fileInfo.sFileFullNameValue.end()) << std::endl;
+            {
+                // 使用专门的锁来确保控制台输出的原子性
+                static std::mutex consoleMutex;
+                std::lock_guard<std::mutex> lock(consoleMutex);
+
+                // Windows 控制台：使用 wstring 直接输出到 wcout，避免编码转换问题
+                std::wstring filePathW(fileInfo.sFileFullNameValue.begin(), fileInfo.sFileFullNameValue.end());
+                std::wcout << L"[NotificationService] socket send: " << filePathW << std::endl;
+            }
+
             g_LogSyncNotificationService.WriteLogContent(
                 LOG_INFO,
-                "通过socket发送: " + UniConv::GetInstance()->ToLocaleFromUtf16LE(fileInfo.sFileFullNameValue)
+                "通过socket发送: " + UniConv::GetInstance()->ToUtf8FromUtf16LE(fileInfo.sFileFullNameValue)
             );
 
         }
@@ -161,6 +168,7 @@ void Lusp_SyncFilesNotificationService::setIpcClient(std::shared_ptr<Lusp_AsioLo
 std::string Lusp_SyncFilesNotificationService::ToFlatBuffer(const Lusp_SyncUploadFileInfo& info) {
     flatbuffers::FlatBufferBuilder builder;
     using namespace UploadClient::Sync;
+
     auto s_lan_client_device = builder.CreateString(UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sLanClientDevice));
     auto s_file_full_name_value = builder.CreateString(UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sFileFullNameValue));
     auto s_only_file_name_value = builder.CreateString(UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sOnlyFileNameValue));
@@ -168,6 +176,7 @@ std::string Lusp_SyncFilesNotificationService::ToFlatBuffer(const Lusp_SyncUploa
     auto s_file_md5_value_info = builder.CreateString(info.sFileMd5ValueInfo);
     auto s_auth_token_values = builder.CreateString(info.sAuthTokenValues);
     auto s_description_info = builder.CreateString(UniConv::GetInstance()->ToUtf8FromUtf16LE(info.sDescriptionInfo));
+
     auto fb = CreateFBS_SyncUploadFileInfo(
         builder,
         static_cast<FBS_SyncUploadFileTyped>(static_cast<int>(info.eUploadFileTyped)),

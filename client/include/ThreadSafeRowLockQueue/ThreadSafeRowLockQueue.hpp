@@ -23,11 +23,11 @@
 template<typename T>
 class ThreadSafeRowLockQueue {
 private:
-    mutable std::mutex mEnqueueMutex;    // 入队专用锁
-    mutable std::mutex mDequeueMutex;    // 出队专用锁
-    std::queue<T> mDataQueue;            // 数据队列
-    std::condition_variable mWorkCV;     // 条件变量
-    std::atomic<size_t> mSize{0};        // 原子计数器
+    mutable std::mutex          mEnqueueMutex;    // 入队专用锁
+    mutable std::mutex          mDequeueMutex;    // 出队专用锁
+    std::queue<T>               mDataQueue;       // 数据队列
+    std::condition_variable     mWorkCV;          // 条件变量
+    std::atomic<size_t>         mSize{0};         // 原子计数器
 
 public:
     // UI线程调用：入队（只锁入队操作）
