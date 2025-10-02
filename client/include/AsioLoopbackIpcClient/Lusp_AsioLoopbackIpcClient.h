@@ -85,7 +85,7 @@ private:
     void try_reconnect();
     void handle_connect_result(const std::error_code& ec, const asio::ip::tcp::endpoint& endpoint);
     void handle_read_result(const std::error_code& ec, std::size_t bytes_transferred);
-    void handle_send_result(const std::error_code& ec, std::size_t bytes_transferred);
+    void handle_send_result(const std::error_code& ec, std::size_t bytes_transferred, uint64_t msg_id);
 
     asio::io_context& io_context_;
     const ClientConfigManager& config_mgr_;

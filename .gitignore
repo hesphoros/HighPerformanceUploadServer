@@ -30,3 +30,4 @@ client/UNICODE_CONV_REFACTOR.md
 client/SPDLOG_MIGRATION_SUCCESS.md
 client/MANDATORY_CONFIG_REQUIREMENT.md
 client/queue
+client/docs/Message-Retry-Mechanism.md

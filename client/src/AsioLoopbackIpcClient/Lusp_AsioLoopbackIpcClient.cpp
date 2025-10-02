@@ -108,8 +108,8 @@ void Lusp_AsioLoopbackIpcClient::do_send_from_queue() {
         return;
     }
 
-    // 从队列取出消息
-    auto ipc_message_opt = message_queue_->dequeue();
+    // 🔍 先 peek 查看消息，不删除（发送失败时消息仍在队列）
+    auto ipc_message_opt = message_queue_->peek();
     if (!ipc_message_opt.has_value()) {
         is_sending_.store(false);
         return;
@@ -132,7 +132,7 @@ void Lusp_AsioLoopbackIpcClient::do_send_from_queue() {
         auto data = std::make_shared<std::vector<char>>(std::move(buffer));
         asio::async_write(*socket_, asio::buffer(*data),
             [this, data, len, msg_id = ipc_message.id](std::error_code ec, std::size_t bytes_sent) {
-                handle_send_result(ec, bytes_sent);
+                handle_send_result(ec, bytes_sent, msg_id);
 
                 if (!ec) {
                     g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_DEBUG,
@@ -140,7 +140,8 @@ void Lusp_AsioLoopbackIpcClient::do_send_from_queue() {
                 }
                 else {
                     g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_ERROR,
-                        "[IPC] 消息 " + std::to_string(msg_id) + " 发送失败: " + SystemErrorUtil::GetErrorMessage(ec));
+                        "[IPC] 消息 " + std::to_string(msg_id) + " 发送失败: " + SystemErrorUtil::GetErrorMessage(ec) +
+                        "，消息保留在队列等待重试");
                 }
             });
     }
@@ -152,22 +153,31 @@ void Lusp_AsioLoopbackIpcClient::do_send_from_queue() {
     }
 }
 
-void Lusp_AsioLoopbackIpcClient::handle_send_result(const std::error_code& ec, std::size_t bytes_transferred) {
+void Lusp_AsioLoopbackIpcClient::handle_send_result(const std::error_code& ec, std::size_t bytes_transferred, uint64_t msg_id) {
     is_sending_.store(false);
 
     if (!ec) {
-        // 发送成功
+        // ✅ 发送成功，从队列删除消息
+        if (message_queue_->pop_front()) {
+            g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_DEBUG,
+                "[IPC] 消息 " + std::to_string(msg_id) + " 已从队列移除");
+        }
+
         connection_monitor_->record_send_success();
 
         // 继续发送队列中的下一条消息
         do_send_from_queue();
     }
     else {
-        // 发送失败，交给连接监测器判断是否需要重连
+        // ❌ 发送失败，消息保留在队列，交给连接监测器判断是否需要重连
+        g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_WARN,
+            "[IPC] 消息 " + std::to_string(msg_id) + " 发送失败，保留在队列等待重试");
+
         bool need_reconnect = connection_monitor_->record_send_failure(ec);
 
         if (!need_reconnect) {
-            // 不需要重连，继续发送下一条（可能是临时错误）
+            // 不需要重连，短暂延迟后继续发送（可能是临时错误）
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             do_send_from_queue();
         }
         // 如果需要重连，ConnectionMonitor 会触发 try_reconnect()

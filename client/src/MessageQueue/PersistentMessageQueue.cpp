@@ -22,7 +22,7 @@ PersistentMessageQueue::PersistentMessageQueue(const std::filesystem::path& pers
 
         data_file_path_ = persist_dir_ / "messages.dat";
         index_file_path_ = persist_dir_ / "messages.idx";
-        
+
         g_LogMessageQueue.WriteLogContent(LOG_INFO,
             "Initializing PersistentMessageQueue with memory capacity " + std::to_string(memory_capacity_) +
             " and max disk size " + std::to_string(max_disk_size_) + " bytes at " + persist_dir_.string());
@@ -64,13 +64,68 @@ PersistentMessageQueue::PersistentMessageQueue(const std::filesystem::path& pers
 }
 
 PersistentMessageQueue::~PersistentMessageQueue() {
-    // 刷新剩余消息到磁盘
-    flush_to_disk();
+    try {
+        // 获取析构前的统计信息
+        size_t write_idx = write_pos_.load(std::memory_order_acquire);
+        size_t read_idx = read_pos_.load(std::memory_order_acquire);
 
-    if (data_writer_.is_open())
-        data_writer_.close();
-    if (data_reader_.is_open())
-        data_reader_.close();
+        size_t memory_pending = 0;
+        if (write_idx >= read_idx) {
+            memory_pending = write_idx - read_idx;
+        }
+        else {
+            memory_pending = memory_capacity_ - read_idx + write_idx;
+        }
+
+        if (memory_pending > 0) {
+            g_LogMessageQueue.WriteLogContent(LOG_INFO,
+                "PersistentMessageQueue destructor: Found " + std::to_string(memory_pending) +
+                " messages in memory, flushing to disk...");
+        }
+        else {
+            g_LogMessageQueue.WriteLogContent(LOG_INFO,
+                "PersistentMessageQueue destructor: No pending messages in memory");
+        }
+
+        // 刷新剩余消息到磁盘
+        size_t flushed = flush_to_disk();
+
+        if (flushed > 0) {
+            g_LogMessageQueue.WriteLogContent(LOG_INFO,
+                "PersistentMessageQueue destructor: Successfully flushed " + std::to_string(flushed) +
+                " messages to disk");
+        }
+
+        // 记录最终统计信息
+        auto stats = get_statistics();
+        g_LogMessageQueue.WriteLogContent(LOG_INFO,
+            std::string("PersistentMessageQueue destructor: Final statistics - ") +
+            "Memory: " + std::to_string(stats.memory_size) + " messages, " +
+            "Disk: " + std::to_string(stats.disk_size) + " messages (" +
+            std::to_string(stats.disk_bytes) + " bytes), " +
+            "Total enqueued: " + std::to_string(stats.total_enqueued) + ", " +
+            "Total dequeued: " + std::to_string(stats.total_dequeued));
+
+        // 关闭文件
+        if (data_writer_.is_open()) {
+            data_writer_.close();
+            g_LogMessageQueue.WriteLogContent(LOG_INFO,
+                "PersistentMessageQueue destructor: Data writer closed");
+        }
+        if (data_reader_.is_open()) {
+            data_reader_.close();
+            g_LogMessageQueue.WriteLogContent(LOG_INFO,
+                "PersistentMessageQueue destructor: Data reader closed");
+        }
+
+        g_LogMessageQueue.WriteLogContent(LOG_INFO,
+            "PersistentMessageQueue destructor: Cleanup completed");
+    }
+    catch (const std::exception& e) {
+        std::string error_msg = UniConv::GetInstance()->ToUtf8FromLocale(e.what());
+        g_LogMessageQueue.WriteLogContent(LOG_ERROR,
+            "PersistentMessageQueue destructor: Exception during cleanup - " + error_msg);
+    }
 }
 
 bool PersistentMessageQueue::enqueue(IpcMessage&& message) {
@@ -131,6 +186,88 @@ std::optional<IpcMessage> PersistentMessageQueue::dequeue() {
     total_dequeued_.fetch_add(1, std::memory_order_relaxed);
 
     return message;
+}
+
+std::optional<IpcMessage> PersistentMessageQueue::peek() const {
+    size_t read_idx = read_pos_.load(std::memory_order_acquire);
+    size_t write_idx = write_pos_.load(std::memory_order_acquire);
+
+    // 内存队列为空
+    if (read_idx == write_idx) {
+        // 尝试从磁盘读取（只读，不改变 disk_read_pos_）
+        std::lock_guard<std::mutex> lock(disk_mutex_);
+        if (disk_read_pos_ >= disk_index_.size()) {
+            return std::nullopt;
+        }
+
+        auto& [offset, size] = disk_index_[disk_read_pos_];
+        try {
+            // 创建临时读取器
+            std::ifstream temp_reader(data_file_path_, std::ios::binary);
+            if (!temp_reader.is_open()) {
+                return std::nullopt;
+            }
+
+            temp_reader.seekg(offset);
+            std::vector<uint8_t> buffer(size);
+            temp_reader.read(reinterpret_cast<char*>(buffer.data()), size);
+            temp_reader.close();
+
+            return deserialize_message(buffer);
+        }
+        catch (const std::exception& e) {
+            std::string error_msg = UniConv::GetInstance()->ToUtf8FromLocale(e.what());
+            g_LogMessageQueue.WriteLogContent(LOG_ERROR,
+                "Failed to peek message from disk at offset " + std::to_string(offset) + ": " + error_msg);
+            return std::nullopt;
+        }
+    }
+
+    // 等待消息写入完成
+    while (!memory_buffer_[read_idx].ready.load(std::memory_order_acquire)) {
+        std::this_thread::yield();
+    }
+
+    // 复制消息（不移动）
+    return memory_buffer_[read_idx].message;
+}
+
+bool PersistentMessageQueue::pop_front() {
+    size_t read_idx = read_pos_.load(std::memory_order_relaxed);
+    size_t write_idx = write_pos_.load(std::memory_order_acquire);
+
+    // 内存队列为空，尝试从磁盘删除
+    if (read_idx == write_idx) {
+        std::lock_guard<std::mutex> lock(disk_mutex_);
+        if (disk_read_pos_ >= disk_index_.size()) {
+            return false; // 队列为空
+        }
+
+        auto& [offset, size] = disk_index_[disk_read_pos_];
+        ++disk_read_pos_;
+        current_disk_size_.fetch_sub(size, std::memory_order_relaxed);
+        total_dequeued_.fetch_add(1, std::memory_order_relaxed);
+
+        g_LogMessageQueue.WriteLogContent(LOG_DEBUG,
+            "Popped message from disk, remaining disk messages: " + std::to_string(disk_index_.size() - disk_read_pos_));
+        return true;
+    }
+
+    // 等待消息写入完成
+    while (!memory_buffer_[read_idx].ready.load(std::memory_order_acquire)) {
+        std::this_thread::yield();
+    }
+
+    // 标记为未就绪
+    memory_buffer_[read_idx].ready.store(false, std::memory_order_release);
+
+    // 更新读指针
+    read_pos_.store(next_index(read_idx), std::memory_order_release);
+    total_dequeued_.fetch_add(1, std::memory_order_relaxed);
+
+    g_LogMessageQueue.WriteLogContent(LOG_DEBUG,
+        "Popped message from memory, remaining memory messages: " + std::to_string(size()));
+    return true;
 }
 
 size_t PersistentMessageQueue::size() const {
@@ -227,7 +364,9 @@ size_t PersistentMessageQueue::load_from_disk() {
     }
 
     return loaded;
-}    size_t PersistentMessageQueue::flush_to_disk() {
+}
+
+size_t PersistentMessageQueue::flush_to_disk() {
     size_t flushed = 0;
 
     while (true) {
@@ -350,7 +489,9 @@ bool PersistentMessageQueue::write_to_disk(const IpcMessage& message) {
             "Failed to read message from disk at offset " + std::to_string(offset) + ": " + error_msg);
         return std::nullopt;
     }
-}    void PersistentMessageQueue::rebuild_disk_index() {
+}
+
+void PersistentMessageQueue::rebuild_disk_index() {
     std::lock_guard<std::mutex> lock(disk_mutex_);
 
     try {
@@ -405,7 +546,9 @@ bool PersistentMessageQueue::write_to_disk(const IpcMessage& message) {
         g_LogMessageQueue.WriteLogContent(LOG_ERROR,
             "Failed to rebuild disk index: " + error_msg);
     }
-}    std::vector<uint8_t> PersistentMessageQueue::serialize_message(const IpcMessage& message) {
+}
+
+std::vector<uint8_t> PersistentMessageQueue::serialize_message(const IpcMessage& message) {
     std::vector<uint8_t> buffer;
     buffer.reserve(sizeof(message.id) + sizeof(message.timestamp) + sizeof(message.priority) +
         sizeof(uint32_t) + message.data.size());

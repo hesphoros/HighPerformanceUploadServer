@@ -14,7 +14,7 @@
 
 
 /**
- * @brief 消息结构体 
+ * @brief 消息结构体
  */
 struct IpcMessage
 {
@@ -88,6 +88,18 @@ public:
      * @return 消息(如果队列为空返回nullopt)
      */
     std::optional<IpcMessage> dequeue();
+
+    /**
+     * @brief 查看队首消息但不删除(无锁，用于发送失败重试)
+     * @return 消息(如果队列为空返回nullopt)
+     */
+    std::optional<IpcMessage> peek() const;
+
+    /**
+     * @brief 删除队首消息(发送成功后调用)
+     * @return 是否成功
+     */
+    bool pop_front();
 
     /**
      * @brief 获取队列大小(近似值)
