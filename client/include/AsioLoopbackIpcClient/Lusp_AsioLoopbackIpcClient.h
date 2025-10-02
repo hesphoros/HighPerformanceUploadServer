@@ -2,6 +2,8 @@
 #define LUSP_ASIO_LOOPBACK_IPC_CLIENT_H
 
 #include "asio/asio.hpp"
+#include "MessageQueue/PersistentMessageQueue.h"
+#include "MessageQueue/ConnectionMonitor.h"
 #include <functional>
 #include <memory>
 #include <string>
@@ -51,8 +53,9 @@ public:
     /**
      * @brief 发送消息
      * @param message 要发送的消息
+     * @param priority 消息优先级(0最高)
      */
-    void send(const std::string& message);
+    void send(const std::string& message, uint32_t priority = 0);
 
     /**
      * @brief 设置消息接收回调
@@ -71,11 +74,18 @@ public:
      */
     bool is_connected() const;
 
+    /**
+     * @brief 获取队列统计信息
+     */
+    PersistentMessageQueue::Statistics get_queue_statistics() const;
+
 private:
     void do_read();
+    void do_send_from_queue();  // 从队列发送消息
     void try_reconnect();
     void handle_connect_result(const std::error_code& ec, const asio::ip::tcp::endpoint& endpoint);
     void handle_read_result(const std::error_code& ec, std::size_t bytes_transferred);
+    void handle_send_result(const std::error_code& ec, std::size_t bytes_transferred);
 
     asio::io_context& io_context_;
     const ClientConfigManager& config_mgr_;
@@ -84,11 +94,16 @@ private:
     MessageCallback                                 on_message_;
     std::mutex                                      send_mutex_;
 
+    // 消息队列和连接监测
+    std::unique_ptr<PersistentMessageQueue>         message_queue_;
+    std::unique_ptr<ConnectionMonitor>              connection_monitor_;
+    std::atomic<bool>                               is_sending_{ false };  // 是否正在发送
+
     // 重连相关状态
     int                                             current_reconnect_attempts_;
     bool                                            is_connecting_;
-    bool                                            should_reconnect_;
-    std::shared_ptr<asio::steady_timer>            reconnect_timer_;
+    bool                                            is_permanently_stopped_;  // 达到最大重连次数后永久停止
+    std::shared_ptr<asio::steady_timer>             reconnect_timer_;
 };
 
 #endif // LUSP_ASIO_LOOPBACK_IPC_CLIENT_H

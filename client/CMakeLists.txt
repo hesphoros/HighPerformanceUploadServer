@@ -145,6 +145,7 @@ set(SRC_LOG src/log_headers.cpp)
 set(SRC_HASH 3rdParty/src/hash-library/md5.cpp 3rdParty/src/hash-library/sha1.cpp 3rdParty/src/hash-library/sha256.cpp 3rdParty/src/hash-library/sha3.cpp 3rdParty/src/hash-library/crc32.cpp)
 set(SRC_LOOPBACK src/AsioLoopbackIpcClient/Lusp_AsioLoopbackIpcClient.cpp)
 set(SRC_CONFIG src/Config/ClientConfigManager.cpp)
+set(SRC_MSGQUEUE src/MessageQueue/PersistentMessageQueue.cpp src/MessageQueue/ConnectionMonitor.cpp)
 # 头文件分组
 set(INC_UI include/MainWindow.h include/FileListWidget.h)
 set(INC_UPLOAD include/SyncUploadQueue/Lusp_SyncUploadQueue.h src/SyncUploadQueue/Lusp_SyncUploadQueuePrivate.h include/ThreadSafeRowLockQueue/ThreadSafeRowLockQueue.hpp)
@@ -156,7 +157,7 @@ set(INC_CONFIG include/Config/ClientConfigManager.h)
 set(UI_FILES ui/MainWindow.ui)
 
 # 合并所有源/头文件（FlatBuffers 只需加 FLATBUFFERS_GENERATED_SOURCES）
-set(ALL_SOURCES ${SRC_MAIN} ${SRC_UI} ${SRC_UPLOAD} ${SRC_FILEINFO} ${SRC_LOG} ${SRC_HASH} ${SRC_LOOPBACK} ${SRC_CONFIG} ${FLATBUFFERS_GENERATED_SOURCES})
+set(ALL_SOURCES ${SRC_MAIN} ${SRC_UI} ${SRC_UPLOAD} ${SRC_FILEINFO} ${SRC_LOG} ${SRC_HASH} ${SRC_LOOPBACK} ${SRC_CONFIG} ${SRC_MSGQUEUE} ${FLATBUFFERS_GENERATED_SOURCES})
 set(ALL_HEADERS ${INC_UI} ${INC_UPLOAD} ${INC_FILEINFO} ${INC_HASH} ${INC_LOOPBACK} ${INC_CONFIG})
 
 # include目录
@@ -221,8 +222,6 @@ target_link_libraries(UploadClient PRIVATE
     Qt6::Core
     Qt6::Widgets
     rpcrt4
-    $<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/lib/iconv/debug/libiconv_1_17.lib>
-    $<$<CONFIG:Release>:${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/lib/iconv/release/libiconv_1_17.lib>
     Kernel32
 )
 

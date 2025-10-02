@@ -18,17 +18,19 @@
 #include <filesystem>
 
 #include "log_headers.h"
+#include "utils/EnumConvert.hpp"
+
 /**
  * @brief 文件上传状态
  * @enum Lusp_UploadStatusInf
  */
 enum class Lusp_UploadStatusInf {
-    LUSP_UPLOAD_STATUS_IDENTIFIERS_COMPLETED = 0,  /*!< 成功 */
-    LUSP_UPLOAD_STATUS_IDENTIFIERS_PENDING   = 1,  /*!< 等待上传 */
-    LUSP_UPLOAD_STATUS_IDENTIFIERS_UPLOADING = 2,  /*!< 上传部分 */
-    LUSP_UPLOAD_STATUS_IDENTIFIERS_REJECTED  = 3,  /*!< 拒绝上传 */
-    LUSP_UPLOAD_STATUS_IDENTIFIERS_FAILED    = 4,  /*!< 失败 */
-    LUSP_UPLOAD_STATUS_IDENTIFIERS_UNDEFINED = 5   /*!< 未定义 */
+    LUSP_UPLOAD_STATUS_IDENTIFIERS_COMPLETED   = 0,  /*!< 成功 */
+    LUSP_UPLOAD_STATUS_IDENTIFIERS_PENDING     = 1,  /*!< 等待上传 */
+    LUSP_UPLOAD_STATUS_IDENTIFIERS_UPLOADING   = 2,  /*!< 上传部分 */
+    LUSP_UPLOAD_STATUS_IDENTIFIERS_REJECTED    = 3,  /*!< 拒绝上传 */
+    LUSP_UPLOAD_STATUS_IDENTIFIERS_FAILED      = 4,  /*!< 失败 */
+    LUSP_UPLOAD_STATUS_IDENTIFIERS_UNDEFINED   = 5   /*!< 未定义 */
 };
 
 /**
@@ -52,31 +54,36 @@ enum class Lusp_FileExistPolicy {
     LUSP_FILE_EXIST_POLICY_UNDEFINED    /*!< 未定义策略 */
 };
 
+// 使用宏定义枚举转换支持
+DEFINE_ENUM_SUPPORT(Lusp_UploadStatusInf)
+DEFINE_ENUM_SUPPORT(Lusp_UploadFileTyped)
+DEFINE_ENUM_SUPPORT(Lusp_FileExistPolicy)
+
 /**
  * @brief 同步上传文件信息结构体
- * 
+ *
  * 该结构体用于存储文件上传过程中的所有相关信息，包括文件基本信息、
  * 上传配置、状态跟踪等。支持LAN和WAN两种上传模式。
- * 
+ *
  * @details 结构体包含以下主要功能：
  * - 文件基本信息管理（名称、大小、MD5等）
  * - 上传策略配置（文件存在处理策略等）
  * - 状态跟踪（上传状态、时间戳等）
  * - 设备信息记录（客户端设备名称）
  * - 认证信息存储（WAN模式下的token）
- * 
+ *
  * @note 该结构体在初始化时会将所有枚举类型设置为UNDEFINED状态，
  *       字符串类型设置为空字符串，数值类型设置为0
- * 
+ *
  * @see Lusp_UploadFileTyped 文件上传类型枚举
- * @see Lusp_FileExistPolicy 文件存在策略枚举  
+ * @see Lusp_FileExistPolicy 文件存在策略枚举
  * @see Lusp_UploadStatusInf 上传状态信息枚举
- * 
+ *
  * @author [hesphoros]
  * @date [2025-6-21]
  * @version 1.0
  */
-typedef struct  Lusp_SyncUploadFileInfo {
+    typedef struct  Lusp_SyncUploadFileInfo {
     Lusp_UploadFileTyped               eUploadFileTyped;            /*!< 文件类型      */
     std::u16string                     sLanClientDevice;            /*!< 客户端设备名称 */
     size_t                             sSyncFileSizeValue;          /*!< 同步文件大小 */
@@ -91,7 +98,7 @@ typedef struct  Lusp_SyncUploadFileInfo {
     std::u16string                     sDescriptionInfo;            /*!< 描述信息 在没有上传成功时被赋值*/
     std::chrono::steady_clock::time_point   enqueueTime;              /*!< 入队时间戳（用于队列延迟统计）*/
 
-}Lusp_SyncUploadFileInfo,* PLusp_SyncUploadFileInfo;
+}Lusp_SyncUploadFileInfo, * PLusp_SyncUploadFileInfo;
 
 
 class Lusp_SyncUploadFileInfoHandler {

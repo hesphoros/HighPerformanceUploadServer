@@ -101,7 +101,7 @@ private:
 
 private:
 
-    Lusp_SyncUploadQueue& queueRef;            // 保存队列引用
+    Lusp_SyncUploadQueue&                               queueRef;        ///< 保存队列引用
     std::thread                                     notifyThread;        ///< 监管线程
     std::atomic<bool>                               shouldStop{ false }; ///< 停止标志
     SocketSendFunc                                  socketSendFunc;      ///< socket通信回调函数

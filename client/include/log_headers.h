@@ -20,6 +20,7 @@ extern LoggerWrapper g_luspLogWriteImpl;
 extern LoggerWrapper g_LogSyncUploadQueueInfo;
 extern LoggerWrapper g_LogSyncNotificationService;
 extern LoggerWrapper g_LogAsioLoopbackIpcClient;
+extern LoggerWrapper g_LogMessageQueue;  // 新增：消息队列日志
 
 // 日志级别常量
 constexpr const char* LOG_INFO = "INFO";
@@ -32,5 +33,7 @@ constexpr const char* LOG_OK = "INFO";
 
 void initializeLogging();
 void shutdownLogging();
+void setupSignalHandlers();  // 设置信号处理器，确保异常退出时日志写入
+void forceFlushAllLogs();    // 强制刷新所有日志（用于信号处理）
 
 #endif // INCLUDE_LUSP_LOG_HEADERS_H

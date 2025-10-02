@@ -241,39 +241,25 @@ bool Lusp_SyncUploadFileInfoHandler::calculateFileMd5ValueInfo() {
 
 
 std::string Lusp_SyncUploadFileInfoHandler::getStatusText() const {
-    switch (m_fileInfo.eUploadStatusInf) {
-    case Lusp_UploadStatusInf::LUSP_UPLOAD_STATUS_IDENTIFIERS_COMPLETED:
-        return "COMPLETED";
-    case Lusp_UploadStatusInf::LUSP_UPLOAD_STATUS_IDENTIFIERS_PENDING:
-        return "PENDING";
-    case Lusp_UploadStatusInf::LUSP_UPLOAD_STATUS_IDENTIFIERS_UPLOADING:
-        return "UPLOADING";
-    case Lusp_UploadStatusInf::LUSP_UPLOAD_STATUS_IDENTIFIERS_REJECTED:
-        return "REJECTED";
-    case Lusp_UploadStatusInf::LUSP_UPLOAD_STATUS_IDENTIFIERS_FAILED:
-        return "FAILED";
-    default:
-        return "UNDEFINED";
+    auto status_str = Lusp_UploadStatusInfToString(m_fileInfo.eUploadStatusInf);
+    // 移除 "LUSP_UPLOAD_STATUS_IDENTIFIERS_" 前缀
+    std::string result(status_str);
+    const std::string prefix = "LUSP_UPLOAD_STATUS_IDENTIFIERS_";
+    if (result.find(prefix) == 0) {
+        result = result.substr(prefix.length());
     }
+    return result;
 }
 
 std::string Lusp_SyncUploadFileInfoHandler::getFileTypeText() const {
-    switch (m_fileInfo.eUploadFileTyped) {
-    case Lusp_UploadFileTyped::LUSP_UPLOADTYPE_DOCUMENT:
-        return "DOCUMENT";
-    case Lusp_UploadFileTyped::LUSP_UPLOADTYPE_IMAGE:
-        return "IMAGE";
-    case Lusp_UploadFileTyped::LUSP_UPLOADTYPE_VIDEO:
-        return "VIDEO";
-    case Lusp_UploadFileTyped::LUSP_UPLOADTYPE_AUDIO:
-        return "AUDIO";
-    case Lusp_UploadFileTyped::LUSP_UPLOADTYPE_ARCHIVE:
-        return "ARCHIVE";
-    case Lusp_UploadFileTyped::LUSP_UPLOADTYPE_CODE:
-        return "CODE";
-    default:
-        return "UNDEFINED";
+    auto type_str = Lusp_UploadFileTypedToString(m_fileInfo.eUploadFileTyped);
+    // 移除 "LUSP_UPLOADTYPE_" 前缀
+    std::string result(type_str);
+    const std::string prefix = "LUSP_UPLOADTYPE_";
+    if (result.find(prefix) == 0) {
+        result = result.substr(prefix.length());
     }
+    return result;
 }
 
 
