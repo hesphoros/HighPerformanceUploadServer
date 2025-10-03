@@ -31,7 +31,10 @@ void Lusp_SyncUploadQueuePrivate::pushFiles(const std::vector<std::u16string>& f
 void Lusp_SyncUploadQueuePrivate::pushFileInfo(const Lusp_SyncUploadFileInfoHandler& handler) {
     // 入队前补全上传时间戳
     const_cast<Lusp_SyncUploadFileInfoHandler&>(handler).setCurrentTimestampMs();
-    const auto& fileInfo = handler.getFileInfo();
+    auto fileInfo = handler.getFileInfo();
+
+    // 设置入队时间戳（用于延迟统计）
+    fileInfo.enqueueTime = std::chrono::steady_clock::now();
     g_LogSyncUploadQueueInfo.WriteLogContent(
         LOG_INFO,
         "Dequeue: " + LUSP_UNICONV->ToUtf8FromUtf16LE(fileInfo.sFileFullNameValue) + " (Type: " + handler.getFileTypeText() + ")"

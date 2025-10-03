@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <chrono>
 #include <cstring>
+// 尾部使用CRC32校验
+#include "crc32.h"
 
 
 PersistentMessageQueue::PersistentMessageQueue(const std::filesystem::path& persist_dir, size_t memory_capacity, size_t max_disk_size)
@@ -24,34 +26,14 @@ PersistentMessageQueue::PersistentMessageQueue(const std::filesystem::path& pers
         index_file_path_ = persist_dir_ / "messages.idx";
 
         g_LogMessageQueue.WriteLogContent(LOG_INFO,
-            "Initializing PersistentMessageQueue with memory capacity " + std::to_string(memory_capacity_) +
-            " and max disk size " + std::to_string(max_disk_size_) + " bytes at " + persist_dir_.string());
-        g_LogMessageQueue.WriteLogContent(LOG_INFO,
-            "Data file path: " + data_file_path_.string());
-        g_LogMessageQueue.WriteLogContent(LOG_INFO,
-            "Index file path: " + index_file_path_.string());
+            "Initializing PersistentMessageQueue: capacity=" + std::to_string(memory_capacity_) +
+            ", max_disk=" + std::to_string(max_disk_size_) + " bytes, path=" + data_file_path_.string());
 
-        // 加载已有数据
+        // 加载已有数据（优先使用索引文件）
         if (std::filesystem::exists(data_file_path_)) {
             rebuild_disk_index();
-            size_t loaded_count = disk_index_.size();
             g_LogMessageQueue.WriteLogContent(LOG_INFO,
-                "PersistentMessageQueue initialized, loaded " + std::to_string(loaded_count) + " messages from disk");
-
-            // 打印每条加载的消息详情
-            if (loaded_count > 0) {
-                g_LogMessageQueue.WriteLogContent(LOG_INFO, "=== Loaded Messages Details ===");
-                for (size_t i = 0; i < loaded_messages_info_.size(); ++i) {
-                    const auto& info = loaded_messages_info_[i];
-                    g_LogMessageQueue.WriteLogContent(LOG_INFO,
-                        "[" + std::to_string(i + 1) + "/" + std::to_string(loaded_count) + "] " +
-                        "ID=" + std::to_string(info.id) +
-                        ", Priority=" + std::to_string(info.priority) +
-                        ", Size=" + std::to_string(info.data_size) + " bytes" +
-                        ", Timestamp=" + std::to_string(info.timestamp));
-                }
-                g_LogMessageQueue.WriteLogContent(LOG_INFO, "=== End of Loaded Messages ===");
-            }
+                "Loaded " + std::to_string(disk_index_.size()) + " messages from disk");
         }
 
 
@@ -63,68 +45,49 @@ PersistentMessageQueue::PersistentMessageQueue(const std::filesystem::path& pers
     }
 }
 
+
 PersistentMessageQueue::~PersistentMessageQueue() {
     try {
-        // 获取析构前的统计信息
-        size_t write_idx = write_pos_.load(std::memory_order_acquire);
-        size_t read_idx = read_pos_.load(std::memory_order_acquire);
-
-        size_t memory_pending = 0;
-        if (write_idx >= read_idx) {
-            memory_pending = write_idx - read_idx;
-        }
-        else {
-            memory_pending = memory_capacity_ - read_idx + write_idx;
-        }
-
-        if (memory_pending > 0) {
-            g_LogMessageQueue.WriteLogContent(LOG_INFO,
-                "PersistentMessageQueue destructor: Found " + std::to_string(memory_pending) +
-                " messages in memory, flushing to disk...");
-        }
-        else {
-            g_LogMessageQueue.WriteLogContent(LOG_INFO,
-                "PersistentMessageQueue destructor: No pending messages in memory");
-        }
-
-        // 刷新剩余消息到磁盘
-        size_t flushed = flush_to_disk();
-
-        if (flushed > 0) {
-            g_LogMessageQueue.WriteLogContent(LOG_INFO,
-                "PersistentMessageQueue destructor: Successfully flushed " + std::to_string(flushed) +
-                " messages to disk");
-        }
-
-        // 记录最终统计信息
+        // 获取统计信息
         auto stats = get_statistics();
+
+        if (stats.memory_size > 0) {
+            g_LogMessageQueue.WriteLogContent(LOG_INFO,
+                "Flushing " + std::to_string(stats.memory_size) + " messages to disk...");
+
+            size_t flushed = flush_to_disk();
+            if (flushed > 0) {
+                g_LogMessageQueue.WriteLogContent(LOG_INFO,
+                    "Successfully flushed " + std::to_string(flushed) + " messages");
+            }
+
+            // 重新获取最终统计
+            stats = get_statistics();
+        }
+
+        // 保存索引文件（加速下次启动）
+        if (stats.disk_size > 0) {
+            if (save_disk_index()) {
+                g_LogMessageQueue.WriteLogContent(LOG_INFO,
+                    "Saved disk index (" + std::to_string(stats.disk_size) + " entries) to " + index_file_path_.string());
+            }
+        }
+
+        // 记录最终统计
         g_LogMessageQueue.WriteLogContent(LOG_INFO,
-            std::string("PersistentMessageQueue destructor: Final statistics - ") +
-            "Memory: " + std::to_string(stats.memory_size) + " messages, " +
-            "Disk: " + std::to_string(stats.disk_size) + " messages (" +
-            std::to_string(stats.disk_bytes) + " bytes), " +
-            "Total enqueued: " + std::to_string(stats.total_enqueued) + ", " +
-            "Total dequeued: " + std::to_string(stats.total_dequeued));
+            "Final stats - Memory: " + std::to_string(stats.memory_size) +
+            ", Disk: " + std::to_string(stats.disk_size) + " (" + std::to_string(stats.disk_bytes) + " bytes)" +
+            ", Enqueued: " + std::to_string(stats.total_enqueued) +
+            ", Dequeued: " + std::to_string(stats.total_dequeued));
 
         // 关闭文件
-        if (data_writer_.is_open()) {
-            data_writer_.close();
-            g_LogMessageQueue.WriteLogContent(LOG_INFO,
-                "PersistentMessageQueue destructor: Data writer closed");
-        }
-        if (data_reader_.is_open()) {
-            data_reader_.close();
-            g_LogMessageQueue.WriteLogContent(LOG_INFO,
-                "PersistentMessageQueue destructor: Data reader closed");
-        }
+        if (data_writer_.is_open()) data_writer_.close();
+        if (data_reader_.is_open()) data_reader_.close();
 
-        g_LogMessageQueue.WriteLogContent(LOG_INFO,
-            "PersistentMessageQueue destructor: Cleanup completed");
     }
     catch (const std::exception& e) {
-        std::string error_msg = UniConv::GetInstance()->ToUtf8FromLocale(e.what());
         g_LogMessageQueue.WriteLogContent(LOG_ERROR,
-            "PersistentMessageQueue destructor: Exception during cleanup - " + error_msg);
+            "Destructor exception: " + UniConv::GetInstance()->ToUtf8FromLocale(e.what()));
     }
 }
 
@@ -249,7 +212,7 @@ bool PersistentMessageQueue::pop_front() {
         total_dequeued_.fetch_add(1, std::memory_order_relaxed);
 
         g_LogMessageQueue.WriteLogContent(LOG_DEBUG,
-            "Popped message from disk, remaining disk messages: " + std::to_string(disk_index_.size() - disk_read_pos_));
+            "Popped message, remaining messages: " + std::to_string(disk_index_.size() - disk_read_pos_));
         return true;
     }
 
@@ -265,8 +228,9 @@ bool PersistentMessageQueue::pop_front() {
     read_pos_.store(next_index(read_idx), std::memory_order_release);
     total_dequeued_.fetch_add(1, std::memory_order_relaxed);
 
+    size_t remaining = size();
     g_LogMessageQueue.WriteLogContent(LOG_DEBUG,
-        "Popped message from memory, remaining memory messages: " + std::to_string(size()));
+        "Popped message, remaining messages: " + std::to_string(remaining));
     return true;
 }
 
@@ -347,7 +311,9 @@ size_t PersistentMessageQueue::load_from_disk() {
                     "Failed to deserialize message at offset " + std::to_string(offset));
                 ++disk_read_pos_;
                 continue;
-            }                // 写入内存队列(不经过enqueue避免重复ID分配)
+            }
+
+            // 写入内存队列(不经过enqueue避免重复ID分配)
             memory_buffer_[write_idx].message = std::move(message.value());
             memory_buffer_[write_idx].ready.store(true, std::memory_order_release);
             write_pos_.store(next_index(write_idx), std::memory_order_release);
@@ -355,6 +321,7 @@ size_t PersistentMessageQueue::load_from_disk() {
             ++disk_read_pos_;
             ++loaded;
         }
+
         catch (const std::exception& e) {
             std::string error_msg = UniConv::GetInstance()->ToUtf8FromLocale(e.what());
             g_LogMessageQueue.WriteLogContent(LOG_ERROR,
@@ -457,7 +424,9 @@ bool PersistentMessageQueue::write_to_disk(const IpcMessage& message) {
             "Failed to write message " + std::to_string(message.id) + " to disk: " + error_msg);
         return false;
     }
-}    std::optional<IpcMessage> PersistentMessageQueue::read_from_disk() {
+}
+
+std::optional<IpcMessage> PersistentMessageQueue::read_from_disk() {
     std::lock_guard<std::mutex> lock(disk_mutex_);
 
     if (disk_read_pos_ >= disk_index_.size()) {
@@ -492,6 +461,19 @@ bool PersistentMessageQueue::write_to_disk(const IpcMessage& message) {
 }
 
 void PersistentMessageQueue::rebuild_disk_index() {
+    // 🚀 策略：优先从索引文件快速加载，失败才扫描数据文件
+    if (load_disk_index()) {
+        g_LogMessageQueue.WriteLogContent(LOG_INFO,
+            "Loaded disk index from index file (fast path)");
+        return;
+    }
+
+    g_LogMessageQueue.WriteLogContent(LOG_WARN,
+        "Index file not found or invalid, rebuilding from data file (slow path)");
+    rebuild_disk_index_from_data();
+}
+
+void PersistentMessageQueue::rebuild_disk_index_from_data() {
     std::lock_guard<std::mutex> lock(disk_mutex_);
 
     try {
@@ -501,37 +483,24 @@ void PersistentMessageQueue::rebuild_disk_index() {
         }
 
         disk_index_.clear();
-        loaded_messages_info_.clear();
         uint64_t offset = 0;
 
+        // 消息头固定大小: id(8) + timestamp(8) + priority(4) + data_size(4) = 24 字节
+        constexpr uint32_t HEADER_SIZE = sizeof(uint64_t) * 2 + sizeof(uint32_t) * 2;
+
         while (reader.good()) {
-            // 读取消息头(id, timestamp, priority, data_size)
-            uint64_t id, timestamp;
-            uint32_t priority, data_size;
+            // 只需要读取 data_size 字段（跳过前 20 字节）
+            reader.seekg(offset + 20, std::ios::beg);  // 跳过 id(8) + timestamp(8) + priority(4)
 
-            reader.read(reinterpret_cast<char*>(&id), sizeof(id));
-            if (reader.gcount() != sizeof(id))
-                break;
-
-            reader.read(reinterpret_cast<char*>(&timestamp), sizeof(timestamp));
-            reader.read(reinterpret_cast<char*>(&priority), sizeof(priority));
+            uint32_t data_size = 0;
             reader.read(reinterpret_cast<char*>(&data_size), sizeof(data_size));
 
-            // 保存消息信息用于日志输出
-            MessageInfo info;
-            info.id = id;
-            info.timestamp = timestamp;
-            info.priority = priority;
-            info.data_size = data_size;
-            loaded_messages_info_.push_back(info);
+            if (reader.gcount() != sizeof(data_size)) {
+                break;  // 文件结束或读取失败
+            }
 
-            // 跳过数据部分
-            reader.seekg(data_size, std::ios::cur);
-
-            // 计算整个消息大小
-            uint32_t total_size =
-                sizeof(id) + sizeof(timestamp) + sizeof(priority) + sizeof(data_size) + data_size;
-
+            // 计算整个消息大小并添加索引
+            uint32_t total_size = HEADER_SIZE + data_size;
             disk_index_.emplace_back(offset, total_size);
             offset += total_size;
         }
@@ -549,25 +518,32 @@ void PersistentMessageQueue::rebuild_disk_index() {
 }
 
 std::vector<uint8_t> PersistentMessageQueue::serialize_message(const IpcMessage& message) {
-    std::vector<uint8_t> buffer;
-    buffer.reserve(sizeof(message.id) + sizeof(message.timestamp) + sizeof(message.priority) +
-        sizeof(uint32_t) + message.data.size());
+    // 消息头固定大小: id(8) + timestamp(8) + priority(4) + data_size(4) = 24 字节
+    constexpr size_t HEADER_SIZE = sizeof(uint64_t) * 2 + sizeof(uint32_t) * 2;
 
-    // 写入头部
-    buffer.insert(buffer.end(), reinterpret_cast<const uint8_t*>(&message.id),
-        reinterpret_cast<const uint8_t*>(&message.id) + sizeof(message.id));
-    buffer.insert(buffer.end(), reinterpret_cast<const uint8_t*>(&message.timestamp),
-        reinterpret_cast<const uint8_t*>(&message.timestamp) + sizeof(message.timestamp));
-    buffer.insert(buffer.end(), reinterpret_cast<const uint8_t*>(&message.priority),
-        reinterpret_cast<const uint8_t*>(&message.priority) + sizeof(message.priority));
+    const uint32_t data_size = static_cast<uint32_t>(message.data.size());
+    const size_t total_size = HEADER_SIZE + data_size;
 
-    // 写入数据长度
-    uint32_t data_size = static_cast<uint32_t>(message.data.size());
-    buffer.insert(buffer.end(), reinterpret_cast<const uint8_t*>(&data_size),
-        reinterpret_cast<const uint8_t*>(&data_size) + sizeof(data_size));
+    std::vector<uint8_t> buffer(total_size);
+    size_t offset = 0;
+
+    // 使用 memcpy 写入头部（性能优于 insert）
+    std::memcpy(buffer.data() + offset, &message.id, sizeof(message.id));
+    offset += sizeof(message.id);
+
+    std::memcpy(buffer.data() + offset, &message.timestamp, sizeof(message.timestamp));
+    offset += sizeof(message.timestamp);
+
+    std::memcpy(buffer.data() + offset, &message.priority, sizeof(message.priority));
+    offset += sizeof(message.priority);
+
+    std::memcpy(buffer.data() + offset, &data_size, sizeof(data_size));
+    offset += sizeof(data_size);
 
     // 写入数据
-    buffer.insert(buffer.end(), message.data.begin(), message.data.end());
+    if (data_size > 0) {
+        std::memcpy(buffer.data() + offset, message.data.data(), data_size);
+    }
 
     return buffer;
 }
@@ -605,4 +581,187 @@ std::optional<IpcMessage> PersistentMessageQueue::deserialize_message(
 
     return message;
 }
+
+// ========== 索引文件持久化实现 ==========
+
+bool PersistentMessageQueue::load_disk_index() {
+    std::lock_guard<std::mutex> lock(disk_mutex_);
+
+    try {
+        if (!std::filesystem::exists(index_file_path_)) {
+            return false;
+        }
+
+        std::ifstream index_reader(index_file_path_, std::ios::binary);
+        if (!index_reader.is_open()) {
+            return false;
+        }
+
+        // 读取文件头
+        constexpr uint32_t MAGIC_NUMBER = 0x4D515549;  // "MQUI"
+        constexpr uint32_t VERSION = 1;
+
+        uint32_t magic, version;
+        uint64_t message_count, total_data_size;
+
+        index_reader.read(reinterpret_cast<char*>(&magic), sizeof(magic));
+        index_reader.read(reinterpret_cast<char*>(&version), sizeof(version));
+        index_reader.read(reinterpret_cast<char*>(&message_count), sizeof(message_count));
+        index_reader.read(reinterpret_cast<char*>(&total_data_size), sizeof(total_data_size));
+
+        // 验证魔数和版本
+        if (magic != MAGIC_NUMBER || version != VERSION) {
+            g_LogMessageQueue.WriteLogContent(LOG_WARN,
+                "Index file has invalid magic/version, rebuilding...");
+            return false;
+        }
+
+        // 验证数据文件大小是否匹配
+        auto actual_data_size = std::filesystem::file_size(data_file_path_);
+        if (actual_data_size != total_data_size) {
+            g_LogMessageQueue.WriteLogContent(LOG_WARN,
+                "Data file size mismatch (expected " + std::to_string(total_data_size) +
+                ", actual " + std::to_string(actual_data_size) + "), rebuilding index...");
+            return false;
+        }
+
+        // 读取索引条目
+        disk_index_.clear();
+        disk_index_.reserve(message_count);
+
+        for (uint64_t i = 0; i < message_count; ++i) {
+            uint64_t offset;
+            uint32_t size;
+
+            index_reader.read(reinterpret_cast<char*>(&offset), sizeof(offset));
+            index_reader.read(reinterpret_cast<char*>(&size), sizeof(size));
+
+            disk_index_.emplace_back(offset, size);
+        }
+
+        // 🔒 读取并验证 CRC32 校验和
+        uint32_t stored_crc = 0;
+        index_reader.read(reinterpret_cast<char*>(&stored_crc), sizeof(stored_crc));
+
+        if (index_reader.gcount() != sizeof(stored_crc)) {
+            g_LogMessageQueue.WriteLogContent(LOG_WARN,
+                "Index file missing CRC32 checksum, rebuilding...");
+            disk_index_.clear();
+            return false;
+        }
+
+        // 计算实际 CRC32（不包括末尾的4字节CRC）
+        size_t content_size = index_reader.tellg() - static_cast<std::streamoff>(sizeof(stored_crc));
+        index_reader.seekg(0, std::ios::beg);
+
+        std::vector<uint8_t> file_content(content_size);
+        index_reader.read(reinterpret_cast<char*>(file_content.data()), content_size);
+
+        CRC32 crc32;
+        crc32.add(file_content.data(), file_content.size());
+        unsigned char crc_bytes[4];
+        crc32.getHash(crc_bytes);
+        uint32_t calculated_crc = *reinterpret_cast<uint32_t*>(crc_bytes);
+
+        if (calculated_crc != stored_crc) {
+            g_LogMessageQueue.WriteLogContent(LOG_WARN,
+                "Index file CRC32 mismatch (expected 0x" + std::to_string(stored_crc) +
+                ", got 0x" + std::to_string(calculated_crc) + "), rebuilding...");
+            disk_index_.clear();
+            return false;
+        }
+
+        g_LogMessageQueue.WriteLogContent(LOG_DEBUG,
+            "Index file CRC32 verified: 0x" + std::to_string(stored_crc));
+
+        current_disk_size_.store(total_data_size, std::memory_order_release);
+        disk_read_pos_ = 0;
+
+        index_reader.close();
+
+        g_LogMessageQueue.WriteLogContent(LOG_INFO,
+            "Loaded " + std::to_string(message_count) + " index entries from " + index_file_path_.string());
+        return true;
+
+    }
+    catch (const std::exception& e) {
+        g_LogMessageQueue.WriteLogContent(LOG_ERROR,
+            "Failed to load index file: " + UniConv::GetInstance()->ToUtf8FromLocale(e.what()));
+        disk_index_.clear();
+        return false;
+    }
+}
+
+bool PersistentMessageQueue::save_disk_index() {
+    std::lock_guard<std::mutex> lock(disk_mutex_);
+
+    try {
+        // 没有磁盘消息，删除索引文件
+        if (disk_index_.empty()) {
+            std::filesystem::remove(index_file_path_);
+            return true;
+        }
+
+        std::ofstream index_writer(index_file_path_, std::ios::binary | std::ios::trunc);
+        if (!index_writer.is_open()) {
+            g_LogMessageQueue.WriteLogContent(LOG_ERROR,
+                "Failed to open index file for writing: " + index_file_path_.string());
+            return false;
+        }
+
+        // 写入文件头
+        constexpr uint32_t MAGIC_NUMBER = 0x4D515549;  // "MQUI"
+        constexpr uint32_t VERSION = 1;
+
+        uint64_t message_count = disk_index_.size();
+        uint64_t total_data_size = current_disk_size_.load(std::memory_order_relaxed);
+
+        index_writer.write(reinterpret_cast<const char*>(&MAGIC_NUMBER), sizeof(MAGIC_NUMBER));
+        index_writer.write(reinterpret_cast<const char*>(&VERSION), sizeof(VERSION));
+        index_writer.write(reinterpret_cast<const char*>(&message_count), sizeof(message_count));
+        index_writer.write(reinterpret_cast<const char*>(&total_data_size), sizeof(total_data_size));
+
+        // 写入索引条目
+        for (const auto& [offset, size] : disk_index_) {
+            index_writer.write(reinterpret_cast<const char*>(&offset), sizeof(offset));
+            index_writer.write(reinterpret_cast<const char*>(&size), sizeof(size));
+        }
+
+        // 🔒 计算 CRC32 校验和（对整个文件内容）
+        index_writer.flush();
+        size_t file_size = index_writer.tellp();
+        index_writer.close();
+
+        // 重新读取文件内容计算 CRC32
+        std::ifstream temp_reader(index_file_path_, std::ios::binary);
+        std::vector<uint8_t> file_content(file_size);
+        temp_reader.read(reinterpret_cast<char*>(file_content.data()), file_size);
+        temp_reader.close();
+
+        CRC32 crc32;
+        crc32.add(file_content.data(), file_content.size());
+        unsigned char crc_bytes[4];
+        crc32.getHash(crc_bytes);
+        uint32_t crc_value = *reinterpret_cast<uint32_t*>(crc_bytes);
+
+        // 将 CRC32 附加到文件末尾
+        std::ofstream crc_writer(index_file_path_, std::ios::binary | std::ios::app);
+        crc_writer.write(reinterpret_cast<const char*>(&crc_value), sizeof(crc_value));
+        crc_writer.flush();
+        crc_writer.close();
+
+        g_LogMessageQueue.WriteLogContent(LOG_DEBUG,
+            "Saved index with CRC32: 0x" + std::to_string(crc_value));
+
+        return true;
+
+    }
+    catch (const std::exception& e) {
+        g_LogMessageQueue.WriteLogContent(LOG_ERROR,
+            "Failed to save index file: " + UniConv::GetInstance()->ToUtf8FromLocale(e.what()));
+        return false;
+    }
+}
+
+
 

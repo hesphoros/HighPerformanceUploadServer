@@ -5,7 +5,6 @@ class Lusp_SyncUploadQueuePrivate;
 class Lusp_SyncFilesNotificationService; // 前置声明
 
 #ifdef _MSC_VER
-// utf-8
 #pragma execution_character_set("utf-8")
 #endif // _MSC_VER
 
@@ -70,18 +69,5 @@ private:
 };
 
 
-//namespace Upload {
-//    inline void push(const std::u16string& filePath) {
-//        Lusp_SyncUploadQueue::instance().push(filePath);
-//    }
-//    
-//    inline void push(const std::vector<std::u16string>& filePaths) {
-//        Lusp_SyncUploadQueue::instance().push(filePaths);
-//    }
-//    
-//    inline void push(const Lusp_SyncUploadFileInfo& fileInfo) {
-//        Lusp_SyncUploadQueue::instance().push(fileInfo);
-//    }
-//}
 
 #endif // INCLUDED_LUSP_UPLOAD_QUEUE_H

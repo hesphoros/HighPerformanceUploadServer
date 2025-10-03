@@ -31,3 +31,9 @@ client/SPDLOG_MIGRATION_SUCCESS.md
 client/MANDATORY_CONFIG_REQUIREMENT.md
 client/queue
 client/docs/Message-Retry-Mechanism.md
+client/docs/NotificationService-Optimization-Plan.md
+client/docs/YOU.md
+client/docs/ThreadSafeQueue-Stop-Fix.md
+client/docs/Reconnect-Exponential-Backoff.md
+client/docs/GUI-Only-Mode.md
+client/docs/Debug-NotifyThread-Timeout.md

@@ -273,7 +273,8 @@ set_target_properties(UploadClient PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-set_target_properties(UploadClient PROPERTIES LINK_FLAGS "/SUBSYSTEM:CONSOLE")
+# Windows GUI 应用程序（隐藏控制台窗口）
+set_target_properties(UploadClient PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 
 # Windows特定设置
 if(WIN32)

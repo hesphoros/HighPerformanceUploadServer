@@ -87,23 +87,23 @@ private:
     void handle_read_result(const std::error_code& ec, std::size_t bytes_transferred);
     void handle_send_result(const std::error_code& ec, std::size_t bytes_transferred, uint64_t msg_id);
 
-    asio::io_context& io_context_;
-    const ClientConfigManager& config_mgr_;
-    std::shared_ptr<asio::ip::tcp::socket>          socket_;
-    std::shared_ptr<std::vector<char>>              buffer_;
-    MessageCallback                                 on_message_;
-    std::mutex                                      send_mutex_;
+    asio::io_context&                               io_context_;                  ///< Asio IO 上下文
+    const ClientConfigManager&                      config_mgr_;                  ///< 客户端配置管理器
+    std::shared_ptr<asio::ip::tcp::socket>          socket_;                      ///< TCP socket
+    std::shared_ptr<std::vector<char>>              buffer_;                      ///< 读缓冲区
+    MessageCallback                                 on_message_;                  ///< 消息接收回调
+    std::mutex                                      send_mutex_;                  ///< 发送消息的互斥锁
 
     // 消息队列和连接监测
-    std::unique_ptr<PersistentMessageQueue>         message_queue_;
-    std::unique_ptr<ConnectionMonitor>              connection_monitor_;
-    std::atomic<bool>                               is_sending_{ false };  // 是否正在发送
+    std::unique_ptr<PersistentMessageQueue>         message_queue_;               ///< 持久化消息队列
+    std::unique_ptr<ConnectionMonitor>              connection_monitor_;          ///< 连接监测器
+    std::atomic<bool>                               is_sending_{ false };         ///< 是否正在发送
 
     // 重连相关状态
-    int                                             current_reconnect_attempts_;
-    bool                                            is_connecting_;
-    bool                                            is_permanently_stopped_;  // 达到最大重连次数后永久停止
-    std::shared_ptr<asio::steady_timer>             reconnect_timer_;
+    int                                             current_reconnect_attempts_;  ///< 当前重连尝试次数
+    bool                                            is_connecting_;               ///< 是否正在连接
+    bool                                            is_permanently_stopped_;      ///< 达到最大重连次数后永久停止
+    std::shared_ptr<asio::steady_timer>             reconnect_timer_;             /// 重连定时器
 };
 
 #endif // LUSP_ASIO_LOOPBACK_IPC_CLIENT_H

@@ -108,7 +108,6 @@ void Lusp_AsioLoopbackIpcClient::do_send_from_queue() {
         return;
     }
 
-    // 🔍 先 peek 查看消息，不删除（发送失败时消息仍在队列）
     auto ipc_message_opt = message_queue_->peek();
     if (!ipc_message_opt.has_value()) {
         is_sending_.store(false);
@@ -157,7 +156,7 @@ void Lusp_AsioLoopbackIpcClient::handle_send_result(const std::error_code& ec, s
     is_sending_.store(false);
 
     if (!ec) {
-        // ✅ 发送成功，从队列删除消息
+
         if (message_queue_->pop_front()) {
             g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_DEBUG,
                 "[IPC] 消息 " + std::to_string(msg_id) + " 已从队列移除");
@@ -165,11 +164,11 @@ void Lusp_AsioLoopbackIpcClient::handle_send_result(const std::error_code& ec, s
 
         connection_monitor_->record_send_success();
 
-        // 继续发送队列中的下一条消息
+
         do_send_from_queue();
     }
     else {
-        // ❌ 发送失败，消息保留在队列，交给连接监测器判断是否需要重连
+        // 发送失败，消息保留在队列，交给连接监测器判断是否需要重连
         g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_WARN,
             "[IPC] 消息 " + std::to_string(msg_id) + " 发送失败，保留在队列等待重试");
 
@@ -251,14 +250,25 @@ void Lusp_AsioLoopbackIpcClient::try_reconnect() {
     socket_ = std::make_shared<asio::ip::tcp::socket>(io_context_);
 
     uint32_t delay = networkConfig.reconnectIntervalMs;
-    // 如果启用了退避策略，增加延迟时间
+
+    // 指数退避策略
     if (networkConfig.enableReconnectBackoff && current_reconnect_attempts_ > 1) {
-        delay = std::min(delay * current_reconnect_attempts_, networkConfig.reconnectBackoffMs);
+        // 指数退避：delay = base_delay × 2^(attempts-1)
+        // 例如：1000ms, 2000ms, 4000ms, 8000ms, 16000ms
+        uint32_t exponentialDelay = delay * (1U << (current_reconnect_attempts_ - 1));
+        delay = std::min(exponentialDelay, networkConfig.reconnectBackoffMs);
+
+        g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_DEBUG,
+            "[IPC] 指数退避计算: " + std::to_string(delay) +
+            "ms (基础: " + std::to_string(networkConfig.reconnectIntervalMs) +
+            "ms × 2^" + std::to_string(current_reconnect_attempts_ - 1) +
+            ", 上限: " + std::to_string(networkConfig.reconnectBackoffMs) + "ms)");
     }
 
     g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_INFO,
-        "[IPC] 第 " + std::to_string(current_reconnect_attempts_) + " 次重连," +
-        std::to_string(delay) + "ms 后尝试");
+        "[IPC] 第 " + std::to_string(current_reconnect_attempts_) +
+        "/" + std::to_string(networkConfig.maxReconnectAttempts) +
+        " 次重连," + std::to_string(delay) + "ms 后尝试");
 
     // 使用异步定时器进行重连
     reconnect_timer_->expires_after(std::chrono::milliseconds(delay));

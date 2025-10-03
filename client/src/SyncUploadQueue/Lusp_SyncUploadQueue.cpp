@@ -24,10 +24,10 @@ Lusp_SyncUploadQueue& Lusp_SyncUploadQueue::instance() {
 }
 
 Lusp_SyncUploadQueue::Lusp_SyncUploadQueue() : d(std::make_unique<Lusp_SyncUploadQueuePrivate>()) {
-    std::cout << "Lusp_SyncUploadQueue: Global instance created" << std::endl;
+    g_LogSyncUploadQueueInfo.WriteLogContent(LOG_INFO, "Lusp_SyncUploadQueue: Global instance created");
 }
 Lusp_SyncUploadQueue::~Lusp_SyncUploadQueue() {
-    std::cout << "Lusp_SyncUploadQueue: Global instance destroyed" << std::endl;
+    g_LogSyncUploadQueueInfo.WriteLogContent(LOG_INFO, "Lusp_SyncUploadQueue: Global instance destroyed");
 }
 void Lusp_SyncUploadQueue::push(const std::u16string& filePath) {
     d->pushFile(filePath);

@@ -121,7 +121,8 @@ BOOL WINAPI consoleHandler(DWORD signal) {
         forceFlushAllLogs();
         shutdownLogging();
 
-        return TRUE;
+        // 强制退出程序（避免 Qt event loop 阻塞）
+        std::_Exit(0);
     }
     return FALSE;
 }
@@ -256,18 +257,21 @@ void initializeLogging() {
 
     }
     catch (const spdlog::spdlog_ex& ex) {
-        std::cerr << "日志初始化失败: " << ex.what() << std::endl;
+        // 日志初始化失败，使用 MessageBox 显示错误
+#ifdef _WIN32
+        MessageBoxA(NULL, ex.what(), "日志初始化失败", MB_OK | MB_ICONERROR);
+#endif
     }
 }
 
 void shutdownLogging() {
     try {
         // 先记录关闭日志（在所有 logger 上）
-        g_luspLogWriteImpl.WriteLogContent(LOG_INFO, "日志系统正在关闭...");
-        g_LogSyncUploadQueueInfo.WriteLogContent(LOG_INFO, "日志系统正在关闭...");
-        g_LogSyncNotificationService.WriteLogContent(LOG_INFO, "日志系统正在关闭...");
-        g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_INFO, "日志系统正在关闭...");
-        g_LogMessageQueue.WriteLogContent(LOG_INFO, "日志系统正在关闭...");
+        g_luspLogWriteImpl.WriteLogContent(LOG_INFO, "File system is closing...");
+        g_LogSyncUploadQueueInfo.WriteLogContent(LOG_INFO, "File system is closing...");
+        g_LogSyncNotificationService.WriteLogContent(LOG_INFO, "File system is closing...");
+        g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_INFO, "File system is closing...");
+        g_LogMessageQueue.WriteLogContent(LOG_INFO, "File system is closing...");
 
         // 防止重复关闭（在记录日志之后检查）
         if (g_isShuttingDown.exchange(true)) {

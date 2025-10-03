@@ -101,18 +101,17 @@ private:
 
 private:
 
-    Lusp_SyncUploadQueue&                               queueRef;        ///< 保存队列引用
-    std::thread                                     notifyThread;        ///< 监管线程
-    std::atomic<bool>                               shouldStop{ false }; ///< 停止标志
-    SocketSendFunc                                  socketSendFunc;      ///< socket通信回调函数
-    // 性能统计
-    std::atomic<size_t>                             processedCount{ 0 }; ///< 已处理任务数
-    double                                          totalLatencyMs{ 0 }; ///< 总处理延迟
-    mutable std::mutex                              latencyMutex;        ///< 延迟统计锁
-    std::shared_ptr<Lusp_AsioLoopbackIpcClient>     ipcClient_;
-    const ClientConfigManager* configMgr_;
-    std::shared_ptr<asio::io_context>               ioContext_;
-    std::thread                                     ioThread_;
+    Lusp_SyncUploadQueue& queueRef;              ///< 保存队列引用
+    std::thread                                     notifyThread;          ///< 监管线程
+    std::atomic<bool>                               shouldStop{ false };   ///< 停止标志
+    SocketSendFunc                                  socketSendFunc;        ///< socket通信回调函数
+    std::atomic<size_t>                             processedCount{ 0 };   ///< 已处理任务数
+    std::atomic<uint64_t>                           totalLatencyUs_{ 0 };  ///< 总处理延迟(微秒)，使用原子变量实现无锁累加
+    std::atomic<uint64_t>                           errorCount_{ 0 };      ///< 错误计数器，统计处理异常次数
+    std::shared_ptr<Lusp_AsioLoopbackIpcClient>     ipcClient_;            ///< IPC客户端
+    const ClientConfigManager* configMgr_;            ///< 配置管理器引用
+    std::shared_ptr<asio::io_context>               ioContext_;            ///< Asio IO 上下文
+    std::thread                                     ioThread_;             ///< Asio IO 线程
 
 
 };
