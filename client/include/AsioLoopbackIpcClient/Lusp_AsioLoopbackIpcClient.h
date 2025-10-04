@@ -81,7 +81,7 @@ public:
 
     /**
      * @brief 启用/禁用应用层心跳
-     * @param enable 是否启用
+     * @param enable 是否启用 默认启用
      */
     void enable_heartbeat(bool enable = true);
 
@@ -111,6 +111,13 @@ private:
      * @details 使用指数退避算法进行重连
      */
     void try_reconnect();
+
+    /**
+     * @brief 处理连接结果
+     * @details 处理连接结果 连接成功设置TCP Keep-Alive 以及启动心跳
+     * @param ec  错误码
+     * @param endpoint  连接的端点
+     */
     void handle_connect_result(const std::error_code& ec, const asio::ip::tcp::endpoint& endpoint);
     void handle_read_result(const std::error_code& ec, std::size_t bytes_transferred);
     void handle_send_result(const std::error_code& ec, std::size_t bytes_transferred, uint64_t msg_id);
@@ -119,12 +126,12 @@ private:
     void enable_tcp_keepalive();
 
     // 应用层心跳
-    void start_heartbeat_timer();
-    void stop_heartbeat_timer();
-    void send_heartbeat_ping();
-    void handle_heartbeat_pong(const std::string& pong_data);
-    void check_heartbeat_timeout();
-    std::string get_computer_name() const;
+    void start_heartbeat_timer(); // 启动心跳定时器
+    void stop_heartbeat_timer();  // 停止心跳定时器
+    void send_heartbeat_ping();   // 发送心跳PING
+    void handle_heartbeat_pong(const std::string& pong_data); // 处理心跳PONG
+    void check_heartbeat_timeout();         // 检查心跳超时
+    std::string get_computer_name() const;  // 获取计算机名称
 
 private:
     //-------------------------------------------------------------------------------------------

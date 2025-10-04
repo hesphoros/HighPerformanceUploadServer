@@ -320,6 +320,12 @@ void Lusp_AsioLoopbackIpcClient::handle_connect_result(const std::error_code& ec
         if (networkConfig.enableAppHeartbeat) {
             heartbeat_enabled_.store(true);
             heartbeat_interval_ms_.store(networkConfig.heartbeatIntervalMs);
+
+            // 初始化心跳时间为连接时间
+            auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count();
+            last_pong_time_ms_.store(now_ms);
+
             start_heartbeat_timer();
         }
 
@@ -511,7 +517,8 @@ void Lusp_AsioLoopbackIpcClient::send_heartbeat_ping() {
                     uint32_t failure_count = heartbeat_failure_count_.fetch_add(1);
                     g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_WARN,
                         "[IPC] 心跳 PING #" + std::to_string(sequence) +
-                        " 发送失败 (连续失败: " + std::to_string(failure_count + 1) + "): " + ec.message());
+                        " 发送失败 (连续失败: " + std::to_string(failure_count + 1) + "): " +
+                        SystemErrorUtil::GetErrorMessage(ec, true));
 
                     // 心跳发送失败，触发重连
                     const auto& networkConfig = config_mgr_.getNetworkConfig();
@@ -563,12 +570,12 @@ void Lusp_AsioLoopbackIpcClient::check_heartbeat_timeout() {
         std::chrono::steady_clock::now().time_since_epoch()).count();
     auto last_pong = last_pong_time_ms_.load();
 
-    // 如果从未收到过 PONG，跳过检查
+    // 如果从未初始化(连接前),跳过检查
     if (last_pong == 0) {
         return;
     }
 
-    // 检查是否超时
+    // 检查是否超时(从连接时间或最后一次PONG时间开始计算)
     uint64_t elapsed = now_ms - last_pong;
     if (elapsed > networkConfig.heartbeatTimeoutMs) {
         uint32_t failure_count = heartbeat_failure_count_.fetch_add(1);

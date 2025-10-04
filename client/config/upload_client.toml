@@ -98,7 +98,7 @@ write_timeout_ms            = 30000   # 写入超时时间（毫秒）
 # 连接管理
 buffer_size                 = 8192    # 网络缓冲区大小
 max_connections             = 10      # 最大连接数
-enable_keep_alive           = true    # 启用Keep-Alive
+enable_keep_alive           = true    # 启用Keep-Alive TCP-Keep-Alive 选项
 keep_alive_interval_ms      = 30000   # Keep-Alive间隔（毫秒）
 
 # 心跳配置（应用层心跳，基于 FlatBuffer）

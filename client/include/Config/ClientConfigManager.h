@@ -187,7 +187,7 @@ public:
         bool     enableKeepAlive         = true;   // 启用Keep-Alive
         uint32_t keepAliveIntervalMs     = 30000;  // Keep-Alive间隔
 
-        // 应用层心跳配置（基于 FlatBuffer）
+        // 应用层心跳配置
         bool     enableAppHeartbeat      = true;   // 启用应用层心跳
         uint32_t heartbeatIntervalMs     = 10000;  // 心跳发送间隔（毫秒）
         uint32_t heartbeatTimeoutMs      = 30000;  // 心跳超时时间（毫秒）

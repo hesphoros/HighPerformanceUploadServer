@@ -44,3 +44,6 @@ docs/Heartbeat-Architecture.md
 LocalUploadServer/docs/Client-Server-Heartbeat-Guide.md
 LocalUploadServer/docs/Server-Heartbeat-Implementation.md
 LocalUploadServer/docs/Fix-Iconv-Encoding-Issue.md
+docs/Heartbeat-ConnectionMonitor-Analysis.md
+docs/Heartbeat-Failure-Trigger-Analysis.md
+docs/Why-Heartbeat-Not-Trigger.md
