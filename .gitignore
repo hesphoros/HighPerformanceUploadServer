@@ -47,3 +47,8 @@ LocalUploadServer/docs/Fix-Iconv-Encoding-Issue.md
 docs/Heartbeat-ConnectionMonitor-Analysis.md
 docs/Heartbeat-Failure-Trigger-Analysis.md
 docs/Why-Heartbeat-Not-Trigger.md
+docs/ConnectionMonitor-Enhancement-Plan.md
+docs/ConnectionMonitor-Integration-Complete.md
+docs/ConnectionMonitor-Test-Guide.md
+docs/ConnectionMonitor-Next-Steps.md
+LocalUploadServer/logs/AsioLoopbackIpcServer-2025_10_05_PM.log

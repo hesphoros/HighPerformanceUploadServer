@@ -306,6 +306,7 @@ void Lusp_AsioLoopbackIpcClient::handle_connect_result(const std::error_code& ec
         current_reconnect_attempts_ = 0; // 重置重连计数
         connection_monitor_->set_state(ConnectionState::Connected);
         connection_monitor_->reset_statistics();
+        connection_monitor_->reconnect_completed();  // 通知 Monitor 重连完成
 
         g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_INFO,
             "[IPC] 连接成功: " + endpoint.address().to_string() + ":" + std::to_string(endpoint.port()));
@@ -356,7 +357,9 @@ void Lusp_AsioLoopbackIpcClient::handle_read_result(const std::error_code& ec, s
     else {
         g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_WARN,
             "[IPC] 读取失败: " + SystemErrorUtil::GetErrorMessage(ec));
-        try_reconnect();
+
+        // 通知 ConnectionMonitor 读取失败，由 Monitor 决定是否触发重连
+        connection_monitor_->record_read_failure(ec);
     }
 }
 
@@ -418,7 +421,7 @@ void Lusp_AsioLoopbackIpcClient::enable_tcp_keepalive() {
         g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_ERROR,
             "[IPC] 设置 TCP Keep-Alive 异常: " + std::string(e.what()));
     }
-}
+    }
 
 // ==================== 应用层心跳实现 ====================
 
@@ -520,12 +523,17 @@ void Lusp_AsioLoopbackIpcClient::send_heartbeat_ping() {
                         " 发送失败 (连续失败: " + std::to_string(failure_count + 1) + "): " +
                         SystemErrorUtil::GetErrorMessage(ec, true));
 
+                    // 通知 ConnectionMonitor 心跳发送失败
+                    connection_monitor_->record_heartbeat_failure(false);
+
                     // 心跳发送失败，触发重连
                     const auto& networkConfig = config_mgr_.getNetworkConfig();
                     if (failure_count + 1 >= networkConfig.heartbeatMaxFailures) {
                         g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_ERROR,
                             "[IPC] 心跳连续失败 " + std::to_string(failure_count + 1) + " 次，触发重连");
-                        try_reconnect();
+
+                        // 使用 ConnectionMonitor 的防重复机制
+                        connection_monitor_->try_trigger_reconnect();
                     }
                 }
             });
@@ -584,12 +592,18 @@ void Lusp_AsioLoopbackIpcClient::check_heartbeat_timeout() {
             "[IPC] ⚠️ 心跳超时 #" + std::to_string(failure_count + 1) +
             " (未收到 PONG 超过 " + std::to_string(elapsed) + "ms)");
 
-        // 连续超时，触发重连
+        // 连续超时，通知 ConnectionMonitor 并触发重连
         if (failure_count + 1 >= networkConfig.heartbeatMaxFailures) {
             g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_ERROR,
                 "[IPC] 💔 心跳连续超时 " + std::to_string(failure_count + 1) + " 次，触发重连");
+
+            // 通知 ConnectionMonitor 心跳失败(超时)
+            connection_monitor_->record_heartbeat_failure(true);
+
             disconnect();
-            try_reconnect();
+
+            // 使用 ConnectionMonitor 的防重复触发机制
+            connection_monitor_->try_trigger_reconnect();
         }
     }
 }
@@ -606,7 +620,7 @@ std::string Lusp_AsioLoopbackIpcClient::get_computer_name() const {
     char buffer[256];
     if (gethostname(buffer, sizeof(buffer)) == 0) {
         return std::string(buffer);
-    }
+}
     return "Unknown-Linux";
 #endif
 }

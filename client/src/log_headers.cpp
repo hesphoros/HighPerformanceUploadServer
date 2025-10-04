@@ -20,6 +20,7 @@ LoggerWrapper g_LogSyncUploadQueueInfo;
 LoggerWrapper g_LogSyncNotificationService;
 LoggerWrapper g_LogAsioLoopbackIpcClient;
 LoggerWrapper g_LogMessageQueue;  // 新增：消息队列日志
+LoggerWrapper g_LogConnectionMonitor;  // 新增：连接监测器日志
 
 // 标记是否正在关闭日志系统（避免重复调用）
 static std::atomic<bool> g_isShuttingDown{ false };
@@ -191,6 +192,10 @@ void initializeLogging() {
             (logPath / ("MessageQueue-" + datetime + ".log")).string(),
             1024 * 1024 * 10, 3);
 
+        auto connmonitor_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+            (logPath / ("ConnectionMonitor-" + datetime + ".log")).string(),
+            1024 * 1024 * 10, 3);
+
         // 创建异步logger
         auto uploadclient_logger = std::make_shared<spdlog::async_logger>(
             "UploadClient",
@@ -222,12 +227,19 @@ void initializeLogging() {
             spdlog::thread_pool(),
             spdlog::async_overflow_policy::block);
 
+        auto connmonitor_logger = std::make_shared<spdlog::async_logger>(
+            "ConnectionMonitor",
+            connmonitor_sink,
+            spdlog::thread_pool(),
+            spdlog::async_overflow_policy::block);
+
         // 注册所有logger
         spdlog::register_logger(uploadclient_logger);
         spdlog::register_logger(syncqueue_logger);
         spdlog::register_logger(notification_logger);
         spdlog::register_logger(ipc_logger);
         spdlog::register_logger(msgqueue_logger);
+        spdlog::register_logger(connmonitor_logger);
 
         // 设置日志格式：[时间] [日志级别] 消息
         uploadclient_logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
@@ -235,6 +247,7 @@ void initializeLogging() {
         notification_logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
         ipc_logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
         msgqueue_logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
+        connmonitor_logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
 
         // 设置日志级别
         spdlog::set_level(spdlog::level::debug);
@@ -248,6 +261,7 @@ void initializeLogging() {
         g_LogSyncNotificationService.setLogger(notification_logger);
         g_LogAsioLoopbackIpcClient.setLogger(ipc_logger);
         g_LogMessageQueue.setLogger(msgqueue_logger);
+        g_LogConnectionMonitor.setLogger(connmonitor_logger);
 
         uploadclient_logger->info("日志系统初始化完成 (使用spdlog异步日志, 1秒自动flush)");
 
@@ -272,6 +286,7 @@ void shutdownLogging() {
         g_LogSyncNotificationService.WriteLogContent(LOG_INFO, "File system is closing...");
         g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_INFO, "File system is closing...");
         g_LogMessageQueue.WriteLogContent(LOG_INFO, "File system is closing...");
+        g_LogConnectionMonitor.WriteLogContent(LOG_INFO, "File system is closing...");
 
         // 防止重复关闭（在记录日志之后检查）
         if (g_isShuttingDown.exchange(true)) {

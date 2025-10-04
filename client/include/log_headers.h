@@ -21,6 +21,7 @@ extern LoggerWrapper g_LogSyncUploadQueueInfo;
 extern LoggerWrapper g_LogSyncNotificationService;
 extern LoggerWrapper g_LogAsioLoopbackIpcClient;
 extern LoggerWrapper g_LogMessageQueue;  // 新增：消息队列日志
+extern LoggerWrapper g_LogConnectionMonitor;  // 新增：连接监测器日志
 
 // 日志级别常量
 constexpr const char* LOG_INFO = "INFO";

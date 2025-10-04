@@ -163,7 +163,7 @@ void Lusp_AsioLoopbackIpcServer::handle_heartbeat_ping(
             state->heartbeat_info.client_version = ping_msg->client_version()->str();
         }
 
-        //// 发送 PONG 响应
+        // 发送 PONG 响应
         send_heartbeat_pong(
             ping_msg->sequence(),
             ping_msg->timestamp(),
