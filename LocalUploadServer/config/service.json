@@ -24,7 +24,7 @@
         "log_level": "info",
         "max_log_size_mb": 100,
         "log_rotation_days": 30,
-        "log_directory": "C:\\ProgramData\\HighPerformanceUpload\\Logs",
+        "log_directory": "D:\\ProgramData\\HighPerformanceUpload\\Logs",
         "event_log_source": "HighPerformanceUploadService",
         "log_categories": {
             "service": true,

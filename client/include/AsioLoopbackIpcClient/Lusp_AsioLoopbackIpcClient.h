@@ -34,7 +34,7 @@ public:
     using MessageCallback = std::function<void(const std::string&)>;
 
     /**
-     * @brief 构造函数 - 使用 ClientConfigManager
+     * @brief 全局配置使用 ClientConfigManager
      * @param io_context Asio IO 上下文
      * @param configMgr 客户端配置管理器
      */
@@ -79,31 +79,86 @@ public:
      */
     PersistentMessageQueue::Statistics get_queue_statistics() const;
 
+    /**
+     * @brief 启用/禁用应用层心跳
+     * @param enable 是否启用
+     */
+    void enable_heartbeat(bool enable = true);
+
+    /**
+     * @brief 设置心跳间隔
+     * @param interval_ms 心跳间隔（毫秒）
+     */
+    void set_heartbeat_interval(uint32_t interval_ms);
+
 private:
+
+    /**
+     * @brief 读取数据
+     * @return void
+     */
     void do_read();
-    void do_send_from_queue();  // 从队列发送消息
+
+    /**
+     * @brief 从持久化消息队列发送消息
+     * @return void
+     */
+    void do_send_from_queue(); 
+
+    /**
+     * @brief 尝试重连
+     * @return void
+     * @details 使用指数退避算法进行重连
+     */
     void try_reconnect();
     void handle_connect_result(const std::error_code& ec, const asio::ip::tcp::endpoint& endpoint);
     void handle_read_result(const std::error_code& ec, std::size_t bytes_transferred);
     void handle_send_result(const std::error_code& ec, std::size_t bytes_transferred, uint64_t msg_id);
 
-    asio::io_context&                               io_context_;                  ///< Asio IO 上下文
-    const ClientConfigManager&                      config_mgr_;                  ///< 客户端配置管理器
-    std::shared_ptr<asio::ip::tcp::socket>          socket_;                      ///< TCP socket
-    std::shared_ptr<std::vector<char>>              buffer_;                      ///< 读缓冲区
-    MessageCallback                                 on_message_;                  ///< 消息接收回调
-    std::mutex                                      send_mutex_;                  ///< 发送消息的互斥锁
+    // TCP Keep-Alive
+    void enable_tcp_keepalive();
+
+    // 应用层心跳
+    void start_heartbeat_timer();
+    void stop_heartbeat_timer();
+    void send_heartbeat_ping();
+    void handle_heartbeat_pong(const std::string& pong_data);
+    void check_heartbeat_timeout();
+    std::string get_computer_name() const;
+
+private:
+    //-------------------------------------------------------------------------------------------
+    // Private Members @{
+    //-------------------------------------------------------------------------------------------
+    asio::io_context&                               io_context_;                     ///< Asio IO 上下文
+    const ClientConfigManager&                      config_mgr_;                     ///< 客户端配置管理器
+    std::shared_ptr<asio::ip::tcp::socket>          socket_;                         ///< TCP socket
+    std::shared_ptr<std::vector<char>>              buffer_;                         ///< 读缓冲区
+    MessageCallback                                 on_message_;                     ///< 消息接收回调
+    std::mutex                                      send_mutex_;                     ///< 发送消息的互斥锁
 
     // 消息队列和连接监测
-    std::unique_ptr<PersistentMessageQueue>         message_queue_;               ///< 持久化消息队列
-    std::unique_ptr<ConnectionMonitor>              connection_monitor_;          ///< 连接监测器
-    std::atomic<bool>                               is_sending_{ false };         ///< 是否正在发送
+    std::unique_ptr<PersistentMessageQueue>         message_queue_;                  ///< 持久化消息队列
+    std::unique_ptr<ConnectionMonitor>              connection_monitor_;             ///< 连接监测器
+    std::atomic<bool>                               is_sending_{ false };            ///< 是否正在发送
 
     // 重连相关状态
-    int                                             current_reconnect_attempts_;  ///< 当前重连尝试次数
-    bool                                            is_connecting_;               ///< 是否正在连接
-    bool                                            is_permanently_stopped_;      ///< 达到最大重连次数后永久停止
-    std::shared_ptr<asio::steady_timer>             reconnect_timer_;             /// 重连定时器
+    int                                             current_reconnect_attempts_;     ///< 当前重连尝试次数
+    bool                                            is_connecting_;                  ///< 是否正在连接
+    bool                                            is_permanently_stopped_;         ///< 达到最大重连次数后永久停止
+    std::shared_ptr<asio::steady_timer>             reconnect_timer_;                ///< 重连定时器
+
+    // 心跳相关状态
+    std::shared_ptr<asio::steady_timer>             heartbeat_timer_;                ///< 心跳定时器
+    std::atomic<bool>                               heartbeat_enabled_{ false };     ///< 是否启用心跳
+    std::atomic<uint32_t>                           heartbeat_interval_ms_{ 10000 }; ///< 心跳间隔
+    std::atomic<uint32_t>                           heartbeat_sequence_{ 0 };        ///< 心跳序列号
+    std::atomic<uint64_t>                           last_pong_time_ms_{ 0 };         ///< 最后收到PONG时间
+    std::atomic<uint32_t>                           heartbeat_failure_count_{ 0 };   ///< 心跳失败计数
+    std::string                                     client_computer_name_;           ///< 客户端计算机名称
+    //-------------------------------------------------------------------------------------------
+    // @}
+    //-------------------------------------------------------------------------------------------
 };
 
 #endif // LUSP_ASIO_LOOPBACK_IPC_CLIENT_H

@@ -20,6 +20,10 @@ struct FBS_SyncUploadFileInfo;
 struct FBS_SyncUploadFileInfoBuilder;
 struct FBS_SyncUploadFileInfoT;
 
+struct FBS_HeartbeatMessage;
+struct FBS_HeartbeatMessageBuilder;
+struct FBS_HeartbeatMessageT;
+
 enum FBS_SyncUploadStatusInf : int32_t {
   FBS_SyncUploadStatusInf_FBS_SYNC_UPLOAD_STATUS_COMPLETED = 0,
   FBS_SyncUploadStatusInf_FBS_SYNC_UPLOAD_STATUS_PENDING = 1,
@@ -141,6 +145,36 @@ inline const char *EnumNameFBS_SyncFileExistPolicy(FBS_SyncFileExistPolicy e) {
   if (::flatbuffers::IsOutRange(e, FBS_SyncFileExistPolicy_FBS_SYNC_FILE_EXIST_POLICY_OVERWRITE, FBS_SyncFileExistPolicy_FBS_SYNC_FILE_EXIST_POLICY_UNDEFINED)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesFBS_SyncFileExistPolicy()[index];
+}
+
+enum FBS_HeartbeatType : int8_t {
+  FBS_HeartbeatType_FBS_HEARTBEAT_PING = 0,
+  FBS_HeartbeatType_FBS_HEARTBEAT_PONG = 1,
+  FBS_HeartbeatType_MIN = FBS_HeartbeatType_FBS_HEARTBEAT_PING,
+  FBS_HeartbeatType_MAX = FBS_HeartbeatType_FBS_HEARTBEAT_PONG
+};
+
+inline const FBS_HeartbeatType (&EnumValuesFBS_HeartbeatType())[2] {
+  static const FBS_HeartbeatType values[] = {
+    FBS_HeartbeatType_FBS_HEARTBEAT_PING,
+    FBS_HeartbeatType_FBS_HEARTBEAT_PONG
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesFBS_HeartbeatType() {
+  static const char * const names[3] = {
+    "FBS_HEARTBEAT_PING",
+    "FBS_HEARTBEAT_PONG",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameFBS_HeartbeatType(FBS_HeartbeatType e) {
+  if (::flatbuffers::IsOutRange(e, FBS_HeartbeatType_FBS_HEARTBEAT_PING, FBS_HeartbeatType_FBS_HEARTBEAT_PONG)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesFBS_HeartbeatType()[index];
 }
 
 struct FBS_SyncUploadFileInfoT : public ::flatbuffers::NativeTable {
@@ -373,6 +407,137 @@ inline ::flatbuffers::Offset<FBS_SyncUploadFileInfo> CreateFBS_SyncUploadFileInf
 
 ::flatbuffers::Offset<FBS_SyncUploadFileInfo> CreateFBS_SyncUploadFileInfo(::flatbuffers::FlatBufferBuilder &_fbb, const FBS_SyncUploadFileInfoT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
+struct FBS_HeartbeatMessageT : public ::flatbuffers::NativeTable {
+  typedef FBS_HeartbeatMessage TableType;
+  UploadClient::Sync::FBS_HeartbeatType type = UploadClient::Sync::FBS_HeartbeatType_FBS_HEARTBEAT_PING;
+  uint32_t sequence = 0;
+  uint64_t timestamp = 0;
+  std::string client_name{};
+  std::string client_version{};
+  std::string payload{};
+};
+
+struct FBS_HeartbeatMessage FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef FBS_HeartbeatMessageT NativeTableType;
+  typedef FBS_HeartbeatMessageBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_TYPE = 4,
+    VT_SEQUENCE = 6,
+    VT_TIMESTAMP = 8,
+    VT_CLIENT_NAME = 10,
+    VT_CLIENT_VERSION = 12,
+    VT_PAYLOAD = 14
+  };
+  UploadClient::Sync::FBS_HeartbeatType type() const {
+    return static_cast<UploadClient::Sync::FBS_HeartbeatType>(GetField<int8_t>(VT_TYPE, 0));
+  }
+  uint32_t sequence() const {
+    return GetField<uint32_t>(VT_SEQUENCE, 0);
+  }
+  uint64_t timestamp() const {
+    return GetField<uint64_t>(VT_TIMESTAMP, 0);
+  }
+  const ::flatbuffers::String *client_name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_CLIENT_NAME);
+  }
+  const ::flatbuffers::String *client_version() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_CLIENT_VERSION);
+  }
+  const ::flatbuffers::String *payload() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_PAYLOAD);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int8_t>(verifier, VT_TYPE, 1) &&
+           VerifyField<uint32_t>(verifier, VT_SEQUENCE, 4) &&
+           VerifyField<uint64_t>(verifier, VT_TIMESTAMP, 8) &&
+           VerifyOffset(verifier, VT_CLIENT_NAME) &&
+           verifier.VerifyString(client_name()) &&
+           VerifyOffset(verifier, VT_CLIENT_VERSION) &&
+           verifier.VerifyString(client_version()) &&
+           VerifyOffset(verifier, VT_PAYLOAD) &&
+           verifier.VerifyString(payload()) &&
+           verifier.EndTable();
+  }
+  FBS_HeartbeatMessageT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(FBS_HeartbeatMessageT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<FBS_HeartbeatMessage> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const FBS_HeartbeatMessageT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct FBS_HeartbeatMessageBuilder {
+  typedef FBS_HeartbeatMessage Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_type(UploadClient::Sync::FBS_HeartbeatType type) {
+    fbb_.AddElement<int8_t>(FBS_HeartbeatMessage::VT_TYPE, static_cast<int8_t>(type), 0);
+  }
+  void add_sequence(uint32_t sequence) {
+    fbb_.AddElement<uint32_t>(FBS_HeartbeatMessage::VT_SEQUENCE, sequence, 0);
+  }
+  void add_timestamp(uint64_t timestamp) {
+    fbb_.AddElement<uint64_t>(FBS_HeartbeatMessage::VT_TIMESTAMP, timestamp, 0);
+  }
+  void add_client_name(::flatbuffers::Offset<::flatbuffers::String> client_name) {
+    fbb_.AddOffset(FBS_HeartbeatMessage::VT_CLIENT_NAME, client_name);
+  }
+  void add_client_version(::flatbuffers::Offset<::flatbuffers::String> client_version) {
+    fbb_.AddOffset(FBS_HeartbeatMessage::VT_CLIENT_VERSION, client_version);
+  }
+  void add_payload(::flatbuffers::Offset<::flatbuffers::String> payload) {
+    fbb_.AddOffset(FBS_HeartbeatMessage::VT_PAYLOAD, payload);
+  }
+  explicit FBS_HeartbeatMessageBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<FBS_HeartbeatMessage> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<FBS_HeartbeatMessage>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<FBS_HeartbeatMessage> CreateFBS_HeartbeatMessage(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    UploadClient::Sync::FBS_HeartbeatType type = UploadClient::Sync::FBS_HeartbeatType_FBS_HEARTBEAT_PING,
+    uint32_t sequence = 0,
+    uint64_t timestamp = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> client_name = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> client_version = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> payload = 0) {
+  FBS_HeartbeatMessageBuilder builder_(_fbb);
+  builder_.add_timestamp(timestamp);
+  builder_.add_payload(payload);
+  builder_.add_client_version(client_version);
+  builder_.add_client_name(client_name);
+  builder_.add_sequence(sequence);
+  builder_.add_type(type);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<FBS_HeartbeatMessage> CreateFBS_HeartbeatMessageDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    UploadClient::Sync::FBS_HeartbeatType type = UploadClient::Sync::FBS_HeartbeatType_FBS_HEARTBEAT_PING,
+    uint32_t sequence = 0,
+    uint64_t timestamp = 0,
+    const char *client_name = nullptr,
+    const char *client_version = nullptr,
+    const char *payload = nullptr) {
+  auto client_name__ = client_name ? _fbb.CreateString(client_name) : 0;
+  auto client_version__ = client_version ? _fbb.CreateString(client_version) : 0;
+  auto payload__ = payload ? _fbb.CreateString(payload) : 0;
+  return UploadClient::Sync::CreateFBS_HeartbeatMessage(
+      _fbb,
+      type,
+      sequence,
+      timestamp,
+      client_name__,
+      client_version__,
+      payload__);
+}
+
+::flatbuffers::Offset<FBS_HeartbeatMessage> CreateFBS_HeartbeatMessage(::flatbuffers::FlatBufferBuilder &_fbb, const FBS_HeartbeatMessageT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
 inline FBS_SyncUploadFileInfoT *FBS_SyncUploadFileInfo::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
   auto _o = std::unique_ptr<FBS_SyncUploadFileInfoT>(new FBS_SyncUploadFileInfoT());
   UnPackTo(_o.get(), _resolver);
@@ -433,6 +598,47 @@ inline ::flatbuffers::Offset<FBS_SyncUploadFileInfo> CreateFBS_SyncUploadFileInf
       _e_upload_status_inf,
       _s_description_info,
       _enqueue_time_ms);
+}
+
+inline FBS_HeartbeatMessageT *FBS_HeartbeatMessage::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<FBS_HeartbeatMessageT>(new FBS_HeartbeatMessageT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void FBS_HeartbeatMessage::UnPackTo(FBS_HeartbeatMessageT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = type(); _o->type = _e; }
+  { auto _e = sequence(); _o->sequence = _e; }
+  { auto _e = timestamp(); _o->timestamp = _e; }
+  { auto _e = client_name(); if (_e) _o->client_name = _e->str(); }
+  { auto _e = client_version(); if (_e) _o->client_version = _e->str(); }
+  { auto _e = payload(); if (_e) _o->payload = _e->str(); }
+}
+
+inline ::flatbuffers::Offset<FBS_HeartbeatMessage> FBS_HeartbeatMessage::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const FBS_HeartbeatMessageT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return CreateFBS_HeartbeatMessage(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<FBS_HeartbeatMessage> CreateFBS_HeartbeatMessage(::flatbuffers::FlatBufferBuilder &_fbb, const FBS_HeartbeatMessageT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const FBS_HeartbeatMessageT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _type = _o->type;
+  auto _sequence = _o->sequence;
+  auto _timestamp = _o->timestamp;
+  auto _client_name = _o->client_name.empty() ? 0 : _fbb.CreateString(_o->client_name);
+  auto _client_version = _o->client_version.empty() ? 0 : _fbb.CreateString(_o->client_version);
+  auto _payload = _o->payload.empty() ? 0 : _fbb.CreateString(_o->payload);
+  return UploadClient::Sync::CreateFBS_HeartbeatMessage(
+      _fbb,
+      _type,
+      _sequence,
+      _timestamp,
+      _client_name,
+      _client_version,
+      _payload);
 }
 
 inline const UploadClient::Sync::FBS_SyncUploadFileInfo *GetFBS_SyncUploadFileInfo(const void *buf) {

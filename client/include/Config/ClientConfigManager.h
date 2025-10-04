@@ -100,9 +100,9 @@ namespace ConfigSections {
 class ClientConfigManager {
 public:
 
-   /**
-     * @brief 上传配置结构体 - 包含所有上传相关配置
-     */
+    /**
+      * @brief 上传配置结构体 - 包含所有上传相关配置
+      */
     struct UploadConfig {
         // ===================== 基础网络配置 =====================
         std::string serverHost          = "127.0.0.1";      // 服务器地址
@@ -149,9 +149,9 @@ public:
         std::vector<std::string> excludePatterns; // 排除的文件模式 (*.tmp, *.bak)
     };
 
-      /**
-     * @brief UI配置结构体 - 用户界面相关配置
-     */
+    /**
+   * @brief UI配置结构体 - 用户界面相关配置
+   */
     struct UIConfig {
         bool showProgressDetails = true;      // 显示详细进度信息
         bool showSpeedInfo       = true;      // 显示速度信息
@@ -186,6 +186,12 @@ public:
         uint32_t maxConnections          = 10;     // 最大连接数
         bool     enableKeepAlive         = true;   // 启用Keep-Alive
         uint32_t keepAliveIntervalMs     = 30000;  // Keep-Alive间隔
+
+        // 应用层心跳配置（基于 FlatBuffer）
+        bool     enableAppHeartbeat      = true;   // 启用应用层心跳
+        uint32_t heartbeatIntervalMs     = 10000;  // 心跳发送间隔（毫秒）
+        uint32_t heartbeatTimeoutMs      = 30000;  // 心跳超时时间（毫秒）
+        uint32_t heartbeatMaxFailures    = 3;      // 连续失败次数触发重连
 
         bool     enableAutoReconnect     = true;   // 启用自动重连
         uint32_t reconnectIntervalMs     = 1000;   // 重连间隔（毫秒）

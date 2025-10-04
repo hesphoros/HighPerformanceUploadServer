@@ -2,8 +2,20 @@
 #include "Config/ClientConfigManager.h"
 #include "log_headers.h"
 #include "utils/SystemErrorUtil.h"
+#include "upload_file_info_generated.h"
 #include <chrono>
 #include <thread>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <winsock2.h>
+#include <mstcpip.h>
+#pragma comment(lib, "ws2_32.lib")
+#else
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/tcp.h>
+#endif
 
 
 Lusp_AsioLoopbackIpcClient::Lusp_AsioLoopbackIpcClient(asio::io_context& io_context, const ClientConfigManager& configMgr)
@@ -13,7 +25,9 @@ Lusp_AsioLoopbackIpcClient::Lusp_AsioLoopbackIpcClient(asio::io_context& io_cont
     , current_reconnect_attempts_(0)
     , is_connecting_(false)
     , is_permanently_stopped_(false)
-    , reconnect_timer_(std::make_shared<asio::steady_timer>(io_context)) {
+    , reconnect_timer_(std::make_shared<asio::steady_timer>(io_context))
+    , heartbeat_timer_(std::make_shared<asio::steady_timer>(io_context))
+    , client_computer_name_(get_computer_name()) {
 
     const auto& networkConfig = config_mgr_.getNetworkConfig();
     // 缓冲区大小
@@ -191,6 +205,9 @@ void Lusp_AsioLoopbackIpcClient::disconnect() {
     is_permanently_stopped_ = true;  // 设置永久停止标志，防止自动重连
     connection_monitor_->set_state(ConnectionState::Disconnected);
 
+    // 停止心跳
+    stop_heartbeat_timer();
+
     if (socket_ && socket_->is_open()) {
         try {
             socket_->close();
@@ -293,6 +310,19 @@ void Lusp_AsioLoopbackIpcClient::handle_connect_result(const std::error_code& ec
         g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_INFO,
             "[IPC] 连接成功: " + endpoint.address().to_string() + ":" + std::to_string(endpoint.port()));
 
+        //  设置 TCP Keep-Alive
+        const auto& networkConfig = config_mgr_.getNetworkConfig();
+        if (networkConfig.enableKeepAlive) {
+            enable_tcp_keepalive();
+        }
+
+        //  启动应用层心跳
+        if (networkConfig.enableAppHeartbeat) {
+            heartbeat_enabled_.store(true);
+            heartbeat_interval_ms_.store(networkConfig.heartbeatIntervalMs);
+            start_heartbeat_timer();
+        }
+
         do_read();
 
         // 连接成功后，开始发送队列中的消息
@@ -322,4 +352,254 @@ void Lusp_AsioLoopbackIpcClient::handle_read_result(const std::error_code& ec, s
             "[IPC] 读取失败: " + SystemErrorUtil::GetErrorMessage(ec));
         try_reconnect();
     }
+}
+
+// ==================== TCP Keep-Alive 实现 ====================
+
+void Lusp_AsioLoopbackIpcClient::enable_tcp_keepalive() {
+    try {
+        const auto& networkConfig = config_mgr_.getNetworkConfig();
+
+        // 1️ 启用 Keep-Alive 选项
+        asio::socket_base::keep_alive option(true);
+        socket_->set_option(option);
+
+#ifdef _WIN32
+        // 2️ Windows 平台特定设置
+        SOCKET native_socket = socket_->native_handle();
+
+        tcp_keepalive keepalive_vals;
+        keepalive_vals.onoff = 1;
+        keepalive_vals.keepalivetime = networkConfig.keepAliveIntervalMs;  // 首次探测延迟
+        keepalive_vals.keepaliveinterval = 1000;  // 探测间隔 1秒
+
+        DWORD bytes_returned;
+        int result = WSAIoctl(native_socket, SIO_KEEPALIVE_VALS,
+            &keepalive_vals, sizeof(keepalive_vals),
+            nullptr, 0, &bytes_returned, nullptr, nullptr);
+
+        if (result == 0) {
+            g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_INFO,
+                "[IPC] TCP Keep-Alive 已启用 (间隔: " +
+                std::to_string(networkConfig.keepAliveIntervalMs) + "ms)");
+        }
+        else {
+            g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_WARN,
+                "[IPC] 设置 TCP Keep-Alive 失败: " + std::to_string(WSAGetLastError()));
+        }
+#else
+        // 3️ Linux 平台设置
+        int fd = socket_->native_handle();
+
+        // 空闲时间（秒）
+        int keepalive_time = networkConfig.keepAliveIntervalMs / 1000;
+        setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &keepalive_time, sizeof(keepalive_time));
+
+        // 探测间隔（秒）
+        int keepalive_interval = 1;
+        setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &keepalive_interval, sizeof(keepalive_interval));
+
+        // 探测次数
+        int keepalive_count = 3;
+        setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &keepalive_count, sizeof(keepalive_count));
+
+        g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_INFO,
+            "[IPC] TCP Keep-Alive 已启用 (间隔: " +
+            std::to_string(networkConfig.keepAliveIntervalMs) + "ms)");
+#endif
+    }
+    catch (const std::exception& e) {
+        g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_ERROR,
+            "[IPC] 设置 TCP Keep-Alive 异常: " + std::string(e.what()));
+    }
+}
+
+// ==================== 应用层心跳实现 ====================
+
+void Lusp_AsioLoopbackIpcClient::enable_heartbeat(bool enable) {
+    heartbeat_enabled_.store(enable);
+
+    if (enable && is_connected()) {
+        start_heartbeat_timer();
+        g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_INFO,
+            "[IPC] 应用层心跳已启用 (间隔: " +
+            std::to_string(heartbeat_interval_ms_.load()) + "ms, 客户端: " + client_computer_name_ + ")");
+    }
+    else {
+        stop_heartbeat_timer();
+        g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_INFO,
+            "[IPC] 应用层心跳已禁用");
+    }
+}
+
+void Lusp_AsioLoopbackIpcClient::set_heartbeat_interval(uint32_t interval_ms) {
+    heartbeat_interval_ms_.store(interval_ms);
+    g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_INFO,
+        "[IPC] 心跳间隔已更新: " + std::to_string(interval_ms) + "ms");
+}
+
+void Lusp_AsioLoopbackIpcClient::start_heartbeat_timer() {
+    if (!heartbeat_timer_) {
+        heartbeat_timer_ = std::make_shared<asio::steady_timer>(io_context_);
+    }
+
+    auto interval = std::chrono::milliseconds(heartbeat_interval_ms_.load());
+    heartbeat_timer_->expires_after(interval);
+    heartbeat_timer_->async_wait([this](std::error_code ec) {
+        if (!ec && heartbeat_enabled_.load() && is_connected()) {
+            send_heartbeat_ping();
+            check_heartbeat_timeout();
+            start_heartbeat_timer();  // 递归调度
+        }
+        });
+}
+
+void Lusp_AsioLoopbackIpcClient::stop_heartbeat_timer() {
+    heartbeat_enabled_.store(false);
+    if (heartbeat_timer_) {
+        heartbeat_timer_->cancel();
+    }
+}
+
+void Lusp_AsioLoopbackIpcClient::send_heartbeat_ping() {
+    try {
+        // 使用 FlatBuffer 构建心跳 PING 消息
+        flatbuffers::FlatBufferBuilder builder(256);
+
+        auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count();
+
+        auto client_name_str = builder.CreateString(client_computer_name_);
+        auto client_version_str = builder.CreateString(config_mgr_.getUploadConfig().clientVersion);
+        auto payload_str = builder.CreateString("");  // 可选的附加数据
+
+        uint32_t sequence = heartbeat_sequence_.fetch_add(1);
+
+        auto heartbeat = UploadClient::Sync::CreateFBS_HeartbeatMessage(builder,
+            UploadClient::Sync::FBS_HeartbeatType_FBS_HEARTBEAT_PING,
+            sequence,
+            static_cast<uint64_t>(now_ms),
+            client_name_str,
+            client_version_str,
+            payload_str);
+
+        builder.Finish(heartbeat);
+
+        // 发送心跳消息（前4字节为长度）
+        uint32_t msg_size = builder.GetSize();
+        std::vector<char> buffer(4 + msg_size);
+
+        // 小端序写入长度
+        buffer[0] = static_cast<char>(msg_size & 0xFF);
+        buffer[1] = static_cast<char>((msg_size >> 8) & 0xFF);
+        buffer[2] = static_cast<char>((msg_size >> 16) & 0xFF);
+        buffer[3] = static_cast<char>((msg_size >> 24) & 0xFF);
+
+        // 拷贝心跳数据
+        std::memcpy(buffer.data() + 4, builder.GetBufferPointer(), msg_size);
+
+        auto data = std::make_shared<std::vector<char>>(std::move(buffer));
+
+        asio::async_write(*socket_, asio::buffer(*data),
+            [this, data, sequence](std::error_code ec, std::size_t bytes_sent) {
+                if (!ec) {
+                    g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_DEBUG,
+                        "[IPC] ❤️ 心跳 PING #" + std::to_string(sequence) +
+                        " 发送成功 (" + std::to_string(bytes_sent) + " 字节)");
+                }
+                else {
+                    uint32_t failure_count = heartbeat_failure_count_.fetch_add(1);
+                    g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_WARN,
+                        "[IPC] 心跳 PING #" + std::to_string(sequence) +
+                        " 发送失败 (连续失败: " + std::to_string(failure_count + 1) + "): " + ec.message());
+
+                    // 心跳发送失败，触发重连
+                    const auto& networkConfig = config_mgr_.getNetworkConfig();
+                    if (failure_count + 1 >= networkConfig.heartbeatMaxFailures) {
+                        g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_ERROR,
+                            "[IPC] 心跳连续失败 " + std::to_string(failure_count + 1) + " 次，触发重连");
+                        try_reconnect();
+                    }
+                }
+            });
+    }
+    catch (const std::exception& e) {
+        g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_ERROR,
+            "[IPC] 构建心跳消息异常: " + std::string(e.what()));
+    }
+}
+
+void Lusp_AsioLoopbackIpcClient::handle_heartbeat_pong(const std::string& pong_data) {
+    try {
+        // 解析 FlatBuffer PONG 消息（跳过前4字节长度前缀）
+        const uint8_t* buf = reinterpret_cast<const uint8_t*>(pong_data.data()) + 4;
+        auto heartbeat = flatbuffers::GetRoot<UploadClient::Sync::FBS_HeartbeatMessage>(buf);
+
+        if (heartbeat->type() == UploadClient::Sync::FBS_HeartbeatType_FBS_HEARTBEAT_PONG) {
+            auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count();
+
+            last_pong_time_ms_.store(now_ms);
+            heartbeat_failure_count_.store(0);  // 重置失败计数
+
+            // 计算往返时延（RTT）
+            uint64_t rtt = now_ms - heartbeat->timestamp();
+
+            g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_DEBUG,
+                "[IPC] 💚 心跳 PONG #" + std::to_string(heartbeat->sequence()) +
+                " 收到 (RTT: " + std::to_string(rtt) + "ms)");
+        }
+    }
+    catch (const std::exception& e) {
+        g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_ERROR,
+            "[IPC] 解析心跳 PONG 异常: " + std::string(e.what()));
+    }
+}
+
+void Lusp_AsioLoopbackIpcClient::check_heartbeat_timeout() {
+    const auto& networkConfig = config_mgr_.getNetworkConfig();
+
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+    auto last_pong = last_pong_time_ms_.load();
+
+    // 如果从未收到过 PONG，跳过检查
+    if (last_pong == 0) {
+        return;
+    }
+
+    // 检查是否超时
+    uint64_t elapsed = now_ms - last_pong;
+    if (elapsed > networkConfig.heartbeatTimeoutMs) {
+        uint32_t failure_count = heartbeat_failure_count_.fetch_add(1);
+
+        g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_WARN,
+            "[IPC] ⚠️ 心跳超时 #" + std::to_string(failure_count + 1) +
+            " (未收到 PONG 超过 " + std::to_string(elapsed) + "ms)");
+
+        // 连续超时，触发重连
+        if (failure_count + 1 >= networkConfig.heartbeatMaxFailures) {
+            g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_ERROR,
+                "[IPC] 💔 心跳连续超时 " + std::to_string(failure_count + 1) + " 次，触发重连");
+            disconnect();
+            try_reconnect();
+        }
+    }
+}
+
+std::string Lusp_AsioLoopbackIpcClient::get_computer_name() const {
+#ifdef _WIN32
+    char buffer[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD size = sizeof(buffer);
+    if (GetComputerNameA(buffer, &size)) {
+        return std::string(buffer);
+    }
+    return "Unknown-Windows";
+#else
+    char buffer[256];
+    if (gethostname(buffer, sizeof(buffer)) == 0) {
+        return std::string(buffer);
+    }
+    return "Unknown-Linux";
+#endif
 }

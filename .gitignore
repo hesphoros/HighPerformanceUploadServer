@@ -37,3 +37,10 @@ client/docs/ThreadSafeQueue-Stop-Fix.md
 client/docs/Reconnect-Exponential-Backoff.md
 client/docs/GUI-Only-Mode.md
 client/docs/Debug-NotifyThread-Timeout.md
+client/docs/Heartbeat-Implementation.md
+client/docs/Heartbeat-Mechanism-Design.md
+client/docs/Heartbeat-Quick-Start.md
+docs/Heartbeat-Architecture.md
+LocalUploadServer/docs/Client-Server-Heartbeat-Guide.md
+LocalUploadServer/docs/Server-Heartbeat-Implementation.md
+LocalUploadServer/docs/Fix-Iconv-Encoding-Issue.md

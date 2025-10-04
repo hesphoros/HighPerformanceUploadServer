@@ -378,6 +378,27 @@ bool ClientConfigManager::validateNetworkConfig(std::vector<std::string>& errors
         isValid = false;
     }
 
+    // 验证心跳配置
+    if (m_networkConfig.enableAppHeartbeat) {
+        if (m_networkConfig.heartbeatIntervalMs < 1000 || m_networkConfig.heartbeatIntervalMs > 300000) {
+            errors.push_back("心跳间隔应在1-300秒范围内");
+            isValid = false;
+        }
+        if (m_networkConfig.heartbeatTimeoutMs < 5000 || m_networkConfig.heartbeatTimeoutMs > 600000) {
+            errors.push_back("心跳超时时间应在5-600秒范围内");
+            isValid = false;
+        }
+        if (m_networkConfig.heartbeatMaxFailures == 0 || m_networkConfig.heartbeatMaxFailures > 10) {
+            errors.push_back("心跳最大失败次数应在1-10范围内");
+            isValid = false;
+        }
+        // 心跳超时应大于心跳间隔
+        if (m_networkConfig.heartbeatTimeoutMs <= m_networkConfig.heartbeatIntervalMs) {
+            errors.push_back("心跳超时时间应大于心跳间隔");
+            isValid = false;
+        }
+    }
+
     // 验证重连配置
     if (m_networkConfig.reconnectIntervalMs < 100 || m_networkConfig.reconnectIntervalMs > 60000) {
         errors.push_back("重连间隔应在0.1-60秒范围内");
@@ -516,6 +537,12 @@ std::string ClientConfigManager::generateFullTomlConfig() const {
     oss << "max_connections = " << m_networkConfig.maxConnections << std::endl;
     oss << "enable_keep_alive = " << (m_networkConfig.enableKeepAlive ? "true" : "false") << std::endl;
     oss << "keep_alive_interval_ms = " << m_networkConfig.keepAliveIntervalMs << std::endl;
+
+    // 心跳配置
+    oss << "enable_app_heartbeat = " << (m_networkConfig.enableAppHeartbeat ? "true" : "false") << std::endl;
+    oss << "heartbeat_interval_ms = " << m_networkConfig.heartbeatIntervalMs << std::endl;
+    oss << "heartbeat_timeout_ms = " << m_networkConfig.heartbeatTimeoutMs << std::endl;
+    oss << "heartbeat_max_failures = " << m_networkConfig.heartbeatMaxFailures << std::endl;
 
     // 重连配置
     oss << "enable_auto_reconnect = " << (m_networkConfig.enableAutoReconnect ? "true" : "false") << std::endl;
@@ -731,6 +758,12 @@ void ClientConfigManager::parseNetworkConfigSection(const toml::value& data) {
     // Keep-Alive配置
     parseConfigValue(network, "enable_keep_alive", m_networkConfig.enableKeepAlive);
     parseConfigValue(network, "keep_alive_interval_ms", m_networkConfig.keepAliveIntervalMs);
+
+    // 应用层心跳配置
+    parseConfigValue(network, "enable_app_heartbeat", m_networkConfig.enableAppHeartbeat);
+    parseConfigValue(network, "heartbeat_interval_ms", m_networkConfig.heartbeatIntervalMs);
+    parseConfigValue(network, "heartbeat_timeout_ms", m_networkConfig.heartbeatTimeoutMs);
+    parseConfigValue(network, "heartbeat_max_failures", m_networkConfig.heartbeatMaxFailures);
 
     // 重连配置
     parseConfigValue(network, "enable_auto_reconnect", m_networkConfig.enableAutoReconnect);
