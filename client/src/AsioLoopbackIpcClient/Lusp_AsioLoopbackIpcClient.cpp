@@ -261,7 +261,7 @@ void Lusp_AsioLoopbackIpcClient::try_reconnect() {
         g_LogAsioLoopbackIpcClient.WriteLogContent(LOG_DEBUG,
             "[IPC] 指数退避计算: " + std::to_string(delay) +
             "ms (基础: " + std::to_string(networkConfig.reconnectIntervalMs) +
-            "ms × 2^" + std::to_string(current_reconnect_attempts_ - 1) +
+            "ms x 2^" + std::to_string(current_reconnect_attempts_ - 1) +
             ", 上限: " + std::to_string(networkConfig.reconnectBackoffMs) + "ms)");
     }
 
